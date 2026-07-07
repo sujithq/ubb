@@ -1,0 +1,123 @@
+@using UBB.Models
+@using UBB.Services
+
+<div class="card card-ubb">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Multi-Cost-Center Scenarios</h5>
+    </div>
+    <div class="card-body">
+        <!-- Preset Buttons -->
+        <div class="mb-3">
+            <label class="form-label fw-bold">Choose Scenario:</label>
+            <div class="d-grid gap-2">
+                @foreach (var preset in ScenarioPresets.MultiCCPresets)
+                {
+                    <button type="button" class="btn btn-outline-info text-start" 
+                            @onclick="() => SelectPreset(preset)">
+                        <div class="fw-bold">@preset.Label</div>
+                        <div class="small text-muted">@preset.Description</div>
+                    </button>
+                }
+            </div>
+        </div>
+
+        <hr />
+
+        <!-- Cost Centers Summary -->
+        @if (CurrentState?.CostCenters.Count > 0)
+        {
+            <div class="mb-3">
+                <h6 class="fw-bold">Cost Centers</h6>
+                <table class="table table-sm table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Cost Center</th>
+                            <th>Users</th>
+                            <th>Metered Budget</th>
+                            <th>Consumed</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var cc in CurrentState.CostCenters)
+                        {
+                            var status = cc.MeteredRemainingCredits > 0 ? "✓" : "✗";
+                            var statusClass = cc.MeteredRemainingCredits > 0 ? "text-success" : "text-danger";
+                            <tr>
+                                <td>@cc.Name</td>
+                                <td>@cc.UserCount</td>
+                                <td>@cc.MeteredRemainingCredits.ToString("N0")</td>
+                                <td>@cc.CreditsConsumed.ToString("N0")</td>
+                                <td class="@statusClass fw-bold">@status</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <div class="small text-muted">Shared Pool</div>
+                            <div class="h5 mb-0 text-primary">@CurrentState.PoolRemainingCredits.ToString("N0")</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <div class="small text-muted">Enterprise Cap</div>
+                            <div class="h5 mb-0 text-info">@CurrentState.EnterpriseMeteredRemainingCredits.ToString("N0")</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr />
+
+            <!-- Run & Simulation Log -->
+            <div class="mb-3">
+                <button type="button" class="btn btn-success w-100 mb-2" @onclick="RunSimulation">
+                    ▶ Run Multi-CC Simulation
+                </button>
+            </div>
+
+            @if (CurrentState.Logs.Count > 0)
+            {
+                <div class="card bg-dark text-light">
+                    <div class="card-header">
+                        <h6 class="mb-0">Simulation Log</h6>
+                    </div>
+                    <div class="card-body" style="max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 0.875rem;">
+                        @foreach (var log in CurrentState.Logs)
+                        {
+                            <div>@log</div>
+                        }
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <p class="text-muted text-center">Select a scenario to begin.</p>
+        }
+    </div>
+</div>
+
+@code {
+    private MultiCostCenterState? CurrentState;
+
+    private void SelectPreset(MultiCCPreset preset)
+    {
+        CurrentState = MultiCostCenterState.CreateDefault();
+        preset.ApplyTo(CurrentState);
+    }
+
+    private void RunSimulation()
+    {
+        if (CurrentState == null) return;
+        RequestFlowEngine.RunMultiCostCenter(CurrentState);
+        StateHasChanged();
+    }
+}

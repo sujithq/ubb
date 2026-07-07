@@ -41,6 +41,8 @@ Configure billing guardrails and observe how a single request — or a multi-ste
 
 Click any scenario button in the simulator to auto-populate all controls and observe the billing outcome:
 
+### Single-User Scenarios (Checkpoints 1–5)
+
 | # | Scenario | User Type | Request Credits | Pool Remaining | Cost Centre | Enterprise | Expected Result |
 |----|----------|-----------|-----------------|----------------|-------------|-----------|---|
 | 1 | **Normal dev request** | Standard | 1,200 | 390,000 | 200,000 | 1,000,000 | ✅ **PASS** — drawn from shared pool, no metered charge |
@@ -49,6 +51,16 @@ Click any scenario button in the simulator to auto-populate all controls and obs
 | 4 | **Pool exhaustion** | Architect | 4,000 | 2,000 | 200,000 | 1,000,000 | ⚠️ **WARN→PASS** — 2k from pool, 2k from metered (CC & enterprise budgets sufficient) |
 | 5 | **Cost centre block** | Architect | 6,000 | 0 | 3,000 | 1,000,000 | ❌ **BLOCK** — pool empty, cost centre metered budget insufficient for 6,000 credits |
 | 6 | **Enterprise hard stop** | Architect | 6,000 | 0 | 200,000 | 3,000 | ❌ **BLOCK** — pool empty, CC has budget, but enterprise cap only has 3,000 left |
+
+### Multi-Cost-Center Scenarios (Organizational Scale)
+
+Switch to **Multi-cost-center** mode to see how multiple teams compete for shared pool and enterprise budget:
+
+| # | Scenario | Cost Centers | Pool | Enterprise Cap | Expected Outcome |
+|---|----------|------|------|---|---|
+| 7 | **Multi-CC Normal** | Engineering (10 users, 200k), Research (5 users, 150k), Sales (3 users, 100k) | 390,000 | 1,000,000 | ✅ **ALL PASS** — shared pool sufficient for all three CCs to make 2,000-credit requests |
+| 8 | **Multi-CC Pool Exhaustion** | Engineering, Research, Sales (same budgets) | 4,000 | 1,000,000 | ⚠️ **WARN→PASS** — pool covers first ~2 requests, 3rd CC enters metered phase; all CCs have enough metered budget |
+| 9 | **Multi-CC Enterprise Block** | Engineering, Research, Sales (same budgets) | 0 | 4,000 | ❌ **PARTIAL BLOCK** — pool empty, CCs have metered budgets, but enterprise cap only supports ~2 requests before exhaustion |
 
 ## Tech Stack
 

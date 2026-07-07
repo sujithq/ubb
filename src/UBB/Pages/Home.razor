@@ -112,6 +112,12 @@
                             Agentic workflow
                             <InfoTip Placement="bottom" Text="Simulate a multi-step AI coding agent: plan → context → implement → test → review. Each step is evaluated independently — a block at any step stops the workflow." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/usage-based-billing-for-organizations-and-enterprises#what-is-billed-in-ai-credits" />
                         </button>
+                        <button class="ubb-mode-tab @ModeClass(SimulationMode.MultiCostCenter)" type="button"
+                                role="tab" aria-selected="@(State.FlowState.Mode == SimulationMode.MultiCostCenter)"
+                                @onclick="() => State.SetMode(SimulationMode.MultiCostCenter)">
+                            Multi-cost-center
+                            <InfoTip Placement="bottom" Text="Simulate multiple cost centers competing for shared pool and enterprise budget. Shows organizational-scale billing dynamics." />
+                        </button>
                     </div>
                 </div>
 
@@ -125,43 +131,60 @@
                         <div class="form-text">Example: 1,200 for normal usage; 4,000 to exceed a 2,500 ULB.</div>
                     </div>
                 }
-                else
+                else if (State.FlowState.Mode == SimulationMode.Agentic)
                 {
                     <div class="mt-4">
                         <AgenticWorkflow Steps="State.FlowState.Steps"
                                          OnStepCreditsChanged="OnStepChanged" />
                     </div>
                 }
+                else
+                {
+                    <div class="alert alert-info mt-4 mb-0">
+                        <small>Configure multi-cost-center scenarios using the panel below.</small>
+                    </div>
+                }
             </div>
         </div>
 
-        @* Flow diagram *@
-        <div class="card ubb-card mb-4">
-            <div class="card-body">
-                <h2 class="ubb-card-title">Flow diagram</h2>
-                <FlowDiagram FlowState="State.FlowState" />
+        @* Flow diagram & Multi-CC Panel *@
+        @if (State.FlowState.Mode == SimulationMode.MultiCostCenter)
+        {
+            <div class="card ubb-card mb-4">
+                <div class="card-body">
+                    <MultiCCPanel />
+                </div>
             </div>
-        </div>
+        }
+        else
+        {
+            <div class="card ubb-card mb-4">
+                <div class="card-body">
+                    <h2 class="ubb-card-title">Flow diagram</h2>
+                    <FlowDiagram FlowState="State.FlowState" />
+                </div>
+            </div>
 
-        @* Log + Presets *@
-        <div class="row g-4">
-            <div class="col-lg-6">
-                <div class="card ubb-card h-100">
-                    <div class="card-body">
-                        <h2 class="ubb-card-title">Execution log</h2>
-                        <ExecutionLog Logs="State.FlowState.Logs" />
+            @* Log + Presets *@
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="card ubb-card h-100">
+                        <div class="card-body">
+                            <h2 class="ubb-card-title">Execution log</h2>
+                            <ExecutionLog Logs="State.FlowState.Logs" />
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card ubb-card h-100">
+                        <div class="card-body">
+                            <h2 class="ubb-card-title">Scenario presets</h2>
+                            <PresetPanel OnPresetSelected="State.ApplyPreset" />
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-lg-6">
-                <div class="card ubb-card h-100">
-                    <div class="card-body">
-                        <h2 class="ubb-card-title">Scenario presets</h2>
-                        <PresetPanel OnPresetSelected="State.ApplyPreset" />
-                    </div>
-                </div>
-            </div>
-        </div>
+        }
 
     </div>
 </div>

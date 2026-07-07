@@ -119,6 +119,73 @@ public static class RequestFlowEngine
         return (allLogs, lastNodeStates, userUsed, poolRemaining, ccRemaining, entRemaining);
     }
 
+    /// <summary>
+    /// Process multiple cost centers making sequential requests.
+    /// Each CC has users making requests; pool is shared; metered budgets per CC + enterprise cap.
+    /// </summary>
+    public static void RunMultiCostCenter(MultiCostCenterState state)
+    {
+        state.Logs.Clear();
+        state.AddLog("Multi-cost-center simulation started.");
+        state.AddLog($"Shared pool: {state.PoolRemainingCredits:N0} | Enterprise cap: {state.EnterpriseMeteredRemainingCredits:N0}");
+        
+        foreach (var cc in state.CostCenters)
+        {
+            state.AddLog($"");
+            state.AddLog($"=== {cc.Name} (users: {cc.UserCount}, metered budget: {cc.MeteredRemainingCredits:N0}) ===");
+
+            // Simulate each CC making a request (average credits per user)
+            var requestCredits = 2000m; // Configurable per scenario
+            
+            // Step 1: Can CC draw from pool?
+            if (state.PoolRemainingCredits >= requestCredits)
+            {
+                state.PoolRemainingCredits -= (int)requestCredits;
+                cc.CreditsConsumed += (int)requestCredits;
+                state.AddLog($"✓ {cc.Name} drew {requestCredits:N0} from pool (pool now: {state.PoolRemainingCredits:N0})");
+                continue;
+            }
+
+            // Step 2: Pool partial + metered
+            var poolPart = state.PoolRemainingCredits;
+            var meteredNeeded = (int)(requestCredits - poolPart);
+
+            if (state.PoolRemainingCredits > 0)
+            {
+                state.PoolRemainingCredits = 0;
+                state.AddLog($"✓ {cc.Name} drew {poolPart:N0} from pool (pool exhausted)");
+            }
+
+            // Step 3: Can CC cover metered from its budget?
+            var ccPay = Math.Min(meteredNeeded, cc.MeteredRemainingCredits);
+            if (ccPay < meteredNeeded)
+            {
+                state.AddLog($"✗ {cc.Name} blocked: needs {meteredNeeded:N0}, has {cc.MeteredRemainingCredits:N0}");
+                continue;
+            }
+
+            // Step 4: Can enterprise cap cover?
+            if (state.EnterpriseMeteredRemainingCredits < meteredNeeded)
+            {
+                state.AddLog($"✗ {cc.Name} blocked: enterprise cap insufficient ({state.EnterpriseMeteredRemainingCredits:N0} / {meteredNeeded:N0})");
+                continue;
+            }
+
+            cc.ConsumeMetered(meteredNeeded);
+            state.EnterpriseMeteredRemainingCredits -= meteredNeeded;
+            state.AddLog($"✓ {cc.Name} drew {meteredNeeded:N0} from metered (CC: {cc.MeteredRemainingCredits:N0} | Ent: {state.EnterpriseMeteredRemainingCredits:N0})");
+        }
+
+        state.AddLog($"");
+        state.AddLog("=== SUMMARY ===");
+        foreach (var cc in state.CostCenters)
+        {
+            state.AddLog($"{cc.Name}: consumed {cc.CreditsConsumed:N0} | metered remaining {cc.MeteredRemainingCredits:N0}");
+        }
+        state.AddLog($"Shared pool: {state.PoolRemainingCredits:N0}");
+        state.AddLog($"Enterprise metered: {state.EnterpriseMeteredRemainingCredits:N0}");
+    }
+
     // ── helpers ──────────────────────────────────────────────────────────────
     private static FlowResult Blocked(List<string> logs, Dictionary<string, FlowNodeState> nodeStates,
         decimal userUsed, decimal poolRemaining, decimal ccRemaining, decimal entRemaining) =>

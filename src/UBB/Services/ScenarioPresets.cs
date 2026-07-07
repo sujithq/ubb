@@ -49,4 +49,50 @@ public static class ScenarioPresets
             UserUsedCredits = 0, CostCenterMeteredRemainingCredits = 200_000, EnterpriseMeteredRemainingCredits = 3_000,
         },
     ];
+
+    /// <summary>
+    /// Multi-cost-center scenario presets showing organizational-scale billing dynamics.
+    /// </summary>
+    public static IReadOnlyList<MultiCCPreset> MultiCCPresets { get; } =
+    [
+        new()
+        {
+            Key = "multiNormal", Label = "Multi-CC Normal",
+            Description = "3 cost centers make reasonable requests; shared pool covers all.",
+            CostCenters =
+            [
+                ("Engineering", 10, 200_000),
+                ("Research", 5, 150_000),
+                ("Sales", 3, 100_000),
+            ],
+            PoolRemainingCredits = 390_000,
+            EnterpriseMeteredRemainingCredits = 1_000_000,
+        },
+        new()
+        {
+            Key = "multiPoolExhaustion", Label = "Multi-CC Pool Exhaustion",
+            Description = "3 CCs make larger requests (2k each); pool exhausted mid-flow, metered mode begins.",
+            CostCenters =
+            [
+                ("Engineering", 10, 200_000),
+                ("Research", 5, 150_000),
+                ("Sales", 3, 100_000),
+            ],
+            PoolRemainingCredits = 4_000, // Only enough for 2 CCs, 3rd hits metered
+            EnterpriseMeteredRemainingCredits = 1_000_000,
+        },
+        new()
+        {
+            Key = "multiEnterpriseBlock", Label = "Multi-CC Enterprise Block",
+            Description = "Pool exhausted, CCs have metered budgets, but enterprise cap is low (only 4k left).",
+            CostCenters =
+            [
+                ("Engineering", 10, 200_000),
+                ("Research", 5, 150_000),
+                ("Sales", 3, 100_000),
+            ],
+            PoolRemainingCredits = 0,
+            EnterpriseMeteredRemainingCredits = 4_000, // Only enough for 2 CC requests
+        },
+    ];
 }

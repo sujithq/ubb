@@ -2,4 +2,4 @@ namespace UBB.Models;
 
 public enum UserType { Standard, Architect }
 
-public enum SimulationMode { Single, Agentic }
+public enum SimulationMode { Single, Agentic, MultiCostCenter }
