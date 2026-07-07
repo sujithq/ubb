@@ -58,9 +58,15 @@ Switch to **Multi-cost-center** mode to see how multiple teams compete for share
 
 | # | Scenario | Cost Centers | Pool | Enterprise Cap | Expected Outcome |
 |---|----------|------|------|---|---|
-| 7 | **Multi-CC Normal** | Engineering (10 users, 200k), Research (5 users, 150k), Sales (3 users, 100k) | 390,000 | 1,000,000 | ✅ **ALL PASS** — shared pool sufficient for all three CCs to make 2,000-credit requests |
+| 7 | **Multi-CC Normal** | Engineering (10u, 200k), Research (5u, 150k), Sales (3u, 100k) | 390,000 | 1,000,000 | ✅ **ALL PASS** — shared pool sufficient for all three CCs to make 2,000-credit requests |
 | 8 | **Multi-CC Pool Exhaustion** | Engineering, Research, Sales (same budgets) | 4,000 | 1,000,000 | ⚠️ **WARN→PASS** — pool covers first ~2 requests, 3rd CC enters metered phase; all CCs have enough metered budget |
 | 9 | **Multi-CC Enterprise Block** | Engineering, Research, Sales (same budgets) | 0 | 4,000 | ❌ **PARTIAL BLOCK** — pool empty, CCs have metered budgets, but enterprise cap only supports ~2 requests before exhaustion |
+| 10 | **Unequal Budgets** | Engineering (10u, 250k), Research (5u, 150k), Support (2u, 8k) | 2,000 | 500,000 | ⚠️ **MIXED** — Engineering passes (pool), Research enters metered (OK), Support **BLOCKED** (metered budget exhausted) |
+| 11 | **One CC Bottleneck** | Engineering (10u, 300k), Research (5u, 50), Sales (3u, 150k) | 100,000 | 800,000 | ⚠️ **MIXED** — Engineering passes, Research **BLOCKED** (metered exhausted), Sales can proceed |
+| 12 | **Tight Enterprise Cap** | Engineering (10u, 200k), Research (5u, 200k), Sales (3u, 200k) | 50,000 | 2,000 | ⚠️ **2/3 PASS** — All CCs attempt metered; 1st & 2nd pass, 3rd **BLOCKED** by enterprise cap |
+| 13 | **Sequential Metered** | Engineering (10u, 8k), Research (5u, 8k), Sales (3u, 8k) | 1,500 | 10,000 | ⚠️ **PARTIAL** — Pool exhausted early, all CCs in metered; Enterprise cap blocks 3rd CC |
+| 14 | **Large Spike** | Engineering (10u, 300k), Research (5u, 100k), Sales (3u, 100k) | 2,500 | 6,000 | ⚠️ **CRITICAL** — Large Engineering request (3k) exhausts pool; Research/Sales compete in metered with tight enterprise cap |
+| 15 | **Edge Case** | Engineering (10u, 300k), Research (5u, 300k), Sales (3u, 300k) | 2,000 | 2,100 | ❌ **2 BLOCK** — Pool exactly covers 1st CC; 2nd enters metered (OK); 3rd **BLOCKED** by enterprise cap |
 
 ## Tech Stack
 

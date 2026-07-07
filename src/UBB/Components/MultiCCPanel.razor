@@ -8,7 +8,7 @@
     <div class="card-body">
         <!-- Preset Buttons -->
         <div class="mb-3">
-            <label class="form-label fw-bold">Choose Scenario:</label>
+            <label class="form-label fw-bold">Preset Scenarios:</label>
             <div class="d-grid gap-2">
                 @foreach (var preset in ScenarioPresets.MultiCCPresets)
                 {
@@ -23,11 +23,72 @@
 
         <hr />
 
+        <!-- Manual Configuration -->
+        <div class="mb-3">
+            <label class="form-label fw-bold">Or Configure Manually:</label>
+
+            @if (CurrentState != null)
+            {
+                <!-- Global Budgets -->
+                <div class="card bg-light mb-3">
+                    <div class="card-body">
+                        <h6 class="card-title">Organization Budgets</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold" for="pool-input">Shared Pool Remaining</label>
+                                <input id="pool-input" type="number" class="form-control form-control-sm" min="0" step="1000"
+                                       value="@CurrentState.PoolRemainingCredits"
+                                       @onchange="e => UpdatePool(e)" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold" for="ent-input">Enterprise Metered Cap</label>
+                                <input id="ent-input" type="number" class="form-control form-control-sm" min="0" step="1000"
+                                       value="@CurrentState.EnterpriseMeteredRemainingCredits"
+                                       @onchange="e => UpdateEnterprise(e)" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cost Centers Editor -->
+                <div class="card bg-light mb-3">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="card-title mb-0">Cost Centers</h6>
+                            <button type="button" class="btn btn-sm btn-success" @onclick="AddCostCenter">+ Add</button>
+                        </div>
+
+                        @foreach (var (cc, idx) in CurrentState.CostCenters.Select((c, i) => (c, i)))
+                        {
+                            <div class="input-group input-group-sm mb-2">
+                                <input type="text" class="form-control" placeholder="CC Name" 
+                                       value="@cc.Name"
+                                       @onchange="e => UpdateCCName(idx, e)" />
+                                <input type="number" class="form-control" style="max-width: 100px;" placeholder="Users" min="1" 
+                                       value="@cc.UserCount"
+                                       @onchange="e => UpdateCCUserCount(idx, e)" />
+                                <input type="number" class="form-control" style="max-width: 150px;" placeholder="Metered Budget" min="0" step="1000"
+                                       value="@cc.MeteredRemainingCredits"
+                                       @onchange="e => UpdateCCBudget(idx, e)" />
+                                <button type="button" class="btn btn-outline-danger" @onclick="() => RemoveCostCenter(idx)">✕</button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <p class="text-muted small">Select a preset first to enable manual configuration.</p>
+            }
+        </div>
+
+        <hr />
+
         <!-- Cost Centers Summary -->
         @if (CurrentState?.CostCenters.Count > 0)
         {
             <div class="mb-3">
-                <h6 class="fw-bold">Cost Centers</h6>
+                <h6 class="fw-bold">Summary</h6>
                 <table class="table table-sm table-bordered">
                     <thead class="table-light">
                         <tr>
@@ -55,7 +116,7 @@
                 </table>
             </div>
 
-            <div class="row">
+            <div class="row mb-3">
                 <div class="col-md-6">
                     <div class="card bg-light">
                         <div class="card-body">
@@ -73,8 +134,6 @@
                     </div>
                 </div>
             </div>
-
-            <hr />
 
             <!-- Run & Simulation Log -->
             <div class="mb-3">
@@ -100,7 +159,7 @@
         }
         else
         {
-            <p class="text-muted text-center">Select a scenario to begin.</p>
+            <p class="text-muted text-center">Select a preset or configure manually to begin.</p>
         }
     </div>
 </div>
@@ -112,11 +171,66 @@
     {
         CurrentState = MultiCostCenterState.CreateDefault();
         preset.ApplyTo(CurrentState);
+        StateHasChanged();
+    }
+
+    private void UpdatePool(ChangeEventArgs e)
+    {
+        if (CurrentState == null) return;
+        if (int.TryParse(e.Value?.ToString() ?? "0", out var v))
+            CurrentState.PoolRemainingCredits = v;
+    }
+
+    private void UpdateEnterprise(ChangeEventArgs e)
+    {
+        if (CurrentState == null) return;
+        if (int.TryParse(e.Value?.ToString() ?? "0", out var v))
+            CurrentState.EnterpriseMeteredRemainingCredits = v;
+    }
+
+    private void UpdateCCName(int idx, ChangeEventArgs e)
+    {
+        if (CurrentState == null || idx < 0 || idx >= CurrentState.CostCenters.Count) return;
+        CurrentState.CostCenters[idx].Name = e.Value?.ToString() ?? "";
+    }
+
+    private void UpdateCCUserCount(int idx, ChangeEventArgs e)
+    {
+        if (CurrentState == null || idx < 0 || idx >= CurrentState.CostCenters.Count) return;
+        if (int.TryParse(e.Value?.ToString() ?? "1", out var v))
+            CurrentState.CostCenters[idx].UserCount = v;
+    }
+
+    private void UpdateCCBudget(int idx, ChangeEventArgs e)
+    {
+        if (CurrentState == null || idx < 0 || idx >= CurrentState.CostCenters.Count) return;
+        if (int.TryParse(e.Value?.ToString() ?? "0", out var v))
+            CurrentState.CostCenters[idx].MeteredRemainingCredits = v;
+    }
+
+    private void AddCostCenter()
+    {
+        if (CurrentState == null) return;
+        CurrentState.CostCenters.Add(new CostCenterBudget 
+        { 
+            Name = $"New CC {CurrentState.CostCenters.Count + 1}", 
+            UserCount = 1, 
+            MeteredRemainingCredits = 100_000 
+        });
+        StateHasChanged();
+    }
+
+    private void RemoveCostCenter(int index)
+    {
+        if (CurrentState == null || index < 0 || index >= CurrentState.CostCenters.Count) return;
+        CurrentState.CostCenters.RemoveAt(index);
+        StateHasChanged();
     }
 
     private void RunSimulation()
     {
         if (CurrentState == null) return;
+        CurrentState.Logs.Clear(); // Clear previous logs
         RequestFlowEngine.RunMultiCostCenter(CurrentState);
         StateHasChanged();
     }
