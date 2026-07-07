@@ -128,27 +128,28 @@ public static class RequestFlowEngine
         state.Logs.Clear();
         state.AddLog("Multi-cost-center simulation started.");
         state.AddLog($"Shared pool: {state.PoolRemainingCredits:N0} | Enterprise cap: {state.EnterpriseMeteredRemainingCredits:N0}");
+        state.AddLog($"Request size per CC: {state.RequestCreditsPerCC:N0} credits");
         
         foreach (var cc in state.CostCenters)
         {
             state.AddLog($"");
             state.AddLog($"=== {cc.Name} (users: {cc.UserCount}, metered budget: {cc.MeteredRemainingCredits:N0}) ===");
 
-            // Simulate each CC making a request (average credits per user)
-            var requestCredits = 2000m; // Configurable per scenario
+            // Simulate each CC making a request
+            var requestCredits = state.RequestCreditsPerCC;
             
             // Step 1: Can CC draw from pool?
             if (state.PoolRemainingCredits >= requestCredits)
             {
-                state.PoolRemainingCredits -= (int)requestCredits;
-                cc.CreditsConsumed += (int)requestCredits;
+                state.PoolRemainingCredits -= requestCredits;
+                cc.CreditsConsumed += requestCredits;
                 state.AddLog($"✓ {cc.Name} drew {requestCredits:N0} from pool (pool now: {state.PoolRemainingCredits:N0})");
                 continue;
             }
 
             // Step 2: Pool partial + metered
             var poolPart = state.PoolRemainingCredits;
-            var meteredNeeded = (int)(requestCredits - poolPart);
+            var meteredNeeded = requestCredits - poolPart;
 
             if (state.PoolRemainingCredits > 0)
             {

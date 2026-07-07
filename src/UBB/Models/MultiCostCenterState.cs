@@ -22,6 +22,11 @@ public class MultiCostCenterState
     public int EnterpriseMeteredRemainingCredits { get; set; }
 
     /// <summary>
+    /// Request size per cost center in credits (configurable).
+    /// </summary>
+    public int RequestCreditsPerCC { get; set; } = 2000;
+
+    /// <summary>
     /// Log of requests processed in this simulation.
     /// </summary>
     public List<string> Logs { get; set; } = [];

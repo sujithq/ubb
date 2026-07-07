@@ -32,19 +32,26 @@
                 <!-- Global Budgets -->
                 <div class="card bg-light mb-3">
                     <div class="card-body">
-                        <h6 class="card-title">Organization Budgets</h6>
+                        <h6 class="card-title">Organization Budgets & Request Size</h6>
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label small fw-semibold" for="pool-input">Shared Pool Remaining</label>
                                 <input id="pool-input" type="number" class="form-control form-control-sm" min="0" step="1000"
                                        value="@CurrentState.PoolRemainingCredits"
                                        @onchange="e => UpdatePool(e)" />
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label small fw-semibold" for="ent-input">Enterprise Metered Cap</label>
                                 <input id="ent-input" type="number" class="form-control form-control-sm" min="0" step="1000"
                                        value="@CurrentState.EnterpriseMeteredRemainingCredits"
                                        @onchange="e => UpdateEnterprise(e)" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-semibold" for="req-input">Request per CC (credits)</label>
+                                <input id="req-input" type="number" class="form-control form-control-sm" min="100" step="100"
+                                       value="@CurrentState.RequestCreditsPerCC"
+                                       @onchange="e => UpdateRequestCredits(e)" />
+                                <div class="form-text small">Per cost center</div>
                             </div>
                         </div>
                     </div>
@@ -186,6 +193,13 @@
         if (CurrentState == null) return;
         if (int.TryParse(e.Value?.ToString() ?? "0", out var v))
             CurrentState.EnterpriseMeteredRemainingCredits = v;
+    }
+
+    private void UpdateRequestCredits(ChangeEventArgs e)
+    {
+        if (CurrentState == null) return;
+        if (int.TryParse(e.Value?.ToString() ?? "2000", out var v))
+            CurrentState.RequestCreditsPerCC = v;
     }
 
     private void UpdateCCName(int idx, ChangeEventArgs e)
