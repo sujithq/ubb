@@ -123,6 +123,24 @@
 .ubb-log-warn  { color: var(--ubb-warn-color); }
 .ubb-log-block { color: var(--ubb-block-color); font-weight: 600; }
 
+/* InfoTip (ⓘ hover popover) */
+.ubb-info-tip {
+    display: inline-flex;
+    align-items: center;
+    margin-left: .2rem;
+    color: var(--bs-secondary-color, #6c757d);
+    cursor: help;
+    vertical-align: middle;
+    opacity: .6;
+    transition: opacity .15s, color .15s;
+}
+.ubb-info-tip:hover,
+.ubb-info-tip:focus { opacity: 1; color: #0d6efd; outline: none; }
+.ubb-tip-link { font-size: .8rem; white-space: nowrap; }
+/* Bootstrap popover sizing */
+.popover { max-width: 310px; font-size: .85rem; }
+.popover-body { line-height: 1.5; }
+
 /* Scenario presets */
 .ubb-presets { display: flex; flex-direction: column; gap: .5rem; }
 .ubb-preset-btn {

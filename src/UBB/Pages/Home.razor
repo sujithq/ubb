@@ -1,5 +1,6 @@
 ﻿@page "/"
 @inject AppStateService State
+@inject IJSRuntime JS
 @implements IDisposable
 
 <PageTitle>GitHub Copilot UBB Simulator</PageTitle>
@@ -31,44 +32,46 @@
                     <button class="btn @BtnClass(UserType.Standard) flex-fill" type="button"
                             @onclick="() => State.SetUserType(UserType.Standard)">
                         Standard user
+                        <InfoTip Placement="bottom" Text="Applies the universal user-level budget (ULB) as the hard cap. Most licensed users fall into this category." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/budgets-for-usage-based-billing#user-level-budget" />
                     </button>
                     <button class="btn @BtnClass(UserType.Architect) flex-fill" type="button"
                             @onclick="() => State.SetUserType(UserType.Architect)">
                         Architect override
+                        <InfoTip Placement="bottom" Text="Applies the individual budget override instead of the ULB. Simulates a named power user who has been granted a higher personal limit." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/budgets-for-usage-based-billing#user-level-budget" />
                     </button>
                 </div>
 
                 <div class="ubb-field-grid">
                     <div>
-                        <label class="form-label fw-semibold" for="ctl-ulb">Universal user-level budget</label>
+                        <label class="form-label fw-semibold" for="ctl-ulb">Universal user-level budget <InfoTip Text="Default hard cap per user in AI credits. Applied to every licensed user unless a more specific budget overrides it. ULBs are always a hard stop — there is no soft option. $1 = 100 credits." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/budgets-for-usage-based-billing#user-level-budget" /></label>
                         <input id="ctl-ulb" class="form-control" type="number" min="0" step="100"
                                value="@State.FlowState.UniversalLimitCredits"
                                @onchange="e => SetField(e, v => State.FlowState.UniversalLimitCredits = v)" />
                         <div class="form-text">Default hard cap per user (credits).</div>
                     </div>
                     <div>
-                        <label class="form-label fw-semibold" for="ctl-ind">Individual override</label>
+                        <label class="form-label fw-semibold" for="ctl-ind">Individual override <InfoTip Text="Overrides the universal ULB for a specific named user. The most specific budget wins: individual > cost-centre ULB > universal." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/budgets-for-usage-based-billing#user-level-budget" /></label>
                         <input id="ctl-ind" class="form-control" type="number" min="0" step="100"
                                value="@State.FlowState.IndividualLimitCredits"
                                @onchange="e => SetField(e, v => State.FlowState.IndividualLimitCredits = v)" />
                         <div class="form-text">Used for architect / power users.</div>
                     </div>
                     <div>
-                        <label class="form-label fw-semibold" for="ctl-pool">Shared pool remaining</label>
+                        <label class="form-label fw-semibold" for="ctl-pool">Shared pool remaining <InfoTip Text="Included AI credits left in the enterprise pool. Standard: Business 1,900 / Enterprise 3,900 per seat. Promotional (Jun–Sep 2026): Business 3,000 / Enterprise 7,000. Credits do not carry over between months." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/usage-based-billing-for-organizations-and-enterprises#how-do-ai-credits-work" /></label>
                         <input id="ctl-pool" class="form-control" type="number" min="0" step="1000"
                                value="@State.FlowState.PoolRemainingCredits"
                                @onchange="e => SetField(e, v => State.FlowState.PoolRemainingCredits = v)" />
                         <div class="form-text">Included credits before paid mode.</div>
                     </div>
                     <div>
-                        <label class="form-label fw-semibold" for="ctl-cc">Cost centre metered remaining</label>
+                        <label class="form-label fw-semibold" for="ctl-cc">Cost centre metered remaining <InfoTip Text="Metered credits remaining for this cost centre. Only active after pool exhaustion. Depleting it blocks only users in this cost centre when 'Stop usage' is on — other cost centres are unaffected." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/budgets-for-usage-based-billing#cost-center-budget" /></label>
                         <input id="ctl-cc" class="form-control" type="number" min="0" step="1000"
                                value="@State.FlowState.CostCenterMeteredRemainingCredits"
                                @onchange="e => SetField(e, v => State.FlowState.CostCenterMeteredRemainingCredits = v)" />
                         <div class="form-text">Checked after pool exhaustion.</div>
                     </div>
                     <div>
-                        <label class="form-label fw-semibold" for="ctl-ent">Enterprise metered remaining</label>
+                        <label class="form-label fw-semibold" for="ctl-ent">Enterprise metered remaining <InfoTip Text="Enterprise-wide metered credits remaining. Checked after cost-centre budget. Total monthly bill = license fees + metered charges — this is NOT a total spend cap." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/budgets-for-usage-based-billing#enterprise-budget" /></label>
                         <input id="ctl-ent" class="form-control" type="number" min="0" step="1000"
                                value="@State.FlowState.EnterpriseMeteredRemainingCredits"
                                @onchange="e => SetField(e, v => State.FlowState.EnterpriseMeteredRemainingCredits = v)" />
@@ -101,11 +104,13 @@
                                 role="tab" aria-selected="@(State.FlowState.Mode == SimulationMode.Single)"
                                 @onclick="() => State.SetMode(SimulationMode.Single)">
                             Single request
+                            <InfoTip Placement="bottom" Text="Simulate one AI request of configurable credit size flowing through all billing guardrails in sequence." />
                         </button>
                         <button class="ubb-mode-tab @ModeClass(SimulationMode.Agentic)" type="button"
                                 role="tab" aria-selected="@(State.FlowState.Mode == SimulationMode.Agentic)"
                                 @onclick="() => State.SetMode(SimulationMode.Agentic)">
                             Agentic workflow
+                            <InfoTip Placement="bottom" Text="Simulate a multi-step AI coding agent: plan → context → implement → test → review. Each step is evaluated independently — a block at any step stops the workflow." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/usage-based-billing-for-organizations-and-enterprises#what-is-billed-in-ai-credits" />
                         </button>
                     </div>
                 </div>
@@ -113,7 +118,7 @@
                 @if (State.FlowState.Mode == SimulationMode.Single)
                 {
                     <div class="mt-4">
-                        <label class="form-label fw-semibold" for="ctl-req">Request size in AI credits</label>
+                        <label class="form-label fw-semibold" for="ctl-req">Request size in AI credits <InfoTip Text="1 AI credit = $0.01 USD. A quick chat message might cost ~100–300 credits. A frontier-model agentic session can consume 5,000+ credits." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/usage-based-billing-for-organizations-and-enterprises#what-are-github-ai-credits" /></label>
                         <input id="ctl-req" class="form-control" type="number" min="0" step="100"
                                value="@State.FlowState.SingleRequestCredits"
                                @onchange="e => SetField(e, v => State.FlowState.SingleRequestCredits = v)" />
@@ -163,6 +168,11 @@
 
 @code {
     protected override void OnInitialized() => State.OnChange += StateHasChanged;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JS.InvokeVoidAsync("ubb.initPopovers");
+    }
 
     public void Dispose() => State.OnChange -= StateHasChanged;
 
