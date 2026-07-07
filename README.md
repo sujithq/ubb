@@ -37,6 +37,19 @@ Configure billing guardrails and observe how a single request — or a multi-ste
 - **Hover tooltips** — every label and flow node links to the relevant GitHub docs section
 - **Standard user vs Architect override** — switches between ULB and individual budget mode
 
+## Preset Scenarios
+
+Click any scenario button in the simulator to auto-populate all controls and observe the billing outcome:
+
+| # | Scenario | User Type | Request Credits | Pool Remaining | Cost Centre | Enterprise | Expected Result |
+|----|----------|-----------|-----------------|----------------|-------------|-----------|---|
+| 1 | **Normal dev request** | Standard | 1,200 | 390,000 | 200,000 | 1,000,000 | ✅ **PASS** — drawn from shared pool, no metered charge |
+| 2 | **Power user spike** | Standard | 4,000 | 390,000 | 200,000 | 1,000,000 | ❌ **BLOCK** — ULB exceeded (2,500 limit), request stopped immediately |
+| 3 | **Architect override** | Architect | 6,000 | 390,000 | 200,000 | 1,000,000 | ✅ **PASS** — individual limit (8,000) allows it, pool covers full amount |
+| 4 | **Pool exhaustion** | Architect | 4,000 | 2,000 | 200,000 | 1,000,000 | ⚠️ **WARN→PASS** — 2k from pool, 2k from metered (CC & enterprise budgets sufficient) |
+| 5 | **Cost centre block** | Architect | 6,000 | 0 | 3,000 | 1,000,000 | ❌ **BLOCK** — pool empty, cost centre metered budget insufficient for 6,000 credits |
+| 6 | **Enterprise hard stop** | Architect | 6,000 | 0 | 200,000 | 3,000 | ❌ **BLOCK** — pool empty, CC has budget, but enterprise cap only has 3,000 left |
+
 ## Tech Stack
 
 - [.NET 10 Blazor WebAssembly](https://learn.microsoft.com/en-us/aspnet/core/blazor/) — no backend, all calculations in-browser via C#
