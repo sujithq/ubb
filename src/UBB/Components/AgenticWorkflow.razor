@@ -1,0 +1,31 @@
+<div class="ubb-info-box mb-3">
+    Planned workflow: @Steps.Sum(s => s.Credits).ToString("N0") credits across @Steps.Count steps.
+</div>
+
+@foreach (var (step, index) in Steps.Select((s, i) => (s, i)))
+{
+    var s = step;
+    <div class="ubb-step-row">
+        <div>
+            <div class="ubb-step-title">@(index + 1). @step.Name</div>
+            <div class="ubb-step-description">@step.Description</div>
+        </div>
+        <div>
+            <label class="form-label fw-semibold mb-1" for="step-@step.Id">Credits</label>
+            <input class="form-control form-control-sm" type="number" id="step-@step.Id"
+                   min="0" step="50" value="@step.Credits"
+                   @onchange="e => OnStepChanged(s.Id, e.Value?.ToString())" />
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public List<AgenticStep> Steps { get; set; } = [];
+    [Parameter] public EventCallback<(string Id, decimal Credits)> OnStepCreditsChanged { get; set; }
+
+    private void OnStepChanged(string id, string? raw)
+    {
+        if (decimal.TryParse(raw, out var v))
+            OnStepCreditsChanged.InvokeAsync((id, Math.Max(0, v)));
+    }
+}

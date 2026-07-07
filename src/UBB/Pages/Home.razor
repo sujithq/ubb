@@ -1,0 +1,189 @@
+﻿@page "/"
+@inject AppStateService State
+@implements IDisposable
+
+<PageTitle>GitHub Copilot UBB Simulator</PageTitle>
+
+<div class="row">
+    <div class="col-lg-12">
+        <section class="ubb-hero mb-4">
+            <p class="ubb-kicker mb-2">GitHub Copilot UBB governance simulator</p>
+            <h1 class="mb-3">Interactive AI Credits Flow</h1>
+            <p class="ubb-hero-text mb-4">
+                Explore how requests are evaluated through user-level controls, shared credits, and metered guardrails.
+                Use single-request and multi-step agentic flows to demonstrate where requests pass, warn, or stop.
+            </p>
+            <StatCards FlowState="State.FlowState" />
+        </section>
+    </div>
+</div>
+
+<div class="row g-4">
+
+    @* ── Left: Controls ── *@
+    <div class="col-xl-4">
+        <div class="card ubb-card h-100">
+            <div class="card-body">
+                <h2 class="ubb-card-title">Controls</h2>
+                <p class="ubb-muted mb-3">Change guardrails and re-run the simulation.</p>
+
+                <div class="d-grid gap-2 d-sm-flex mb-3">
+                    <button class="btn @BtnClass(UserType.Standard) flex-fill" type="button"
+                            @onclick="() => State.SetUserType(UserType.Standard)">
+                        Standard user
+                    </button>
+                    <button class="btn @BtnClass(UserType.Architect) flex-fill" type="button"
+                            @onclick="() => State.SetUserType(UserType.Architect)">
+                        Architect override
+                    </button>
+                </div>
+
+                <div class="ubb-field-grid">
+                    <div>
+                        <label class="form-label fw-semibold" for="ctl-ulb">Universal user-level budget</label>
+                        <input id="ctl-ulb" class="form-control" type="number" min="0" step="100"
+                               value="@State.FlowState.UniversalLimitCredits"
+                               @onchange="e => SetField(e, v => State.FlowState.UniversalLimitCredits = v)" />
+                        <div class="form-text">Default hard cap per user (credits).</div>
+                    </div>
+                    <div>
+                        <label class="form-label fw-semibold" for="ctl-ind">Individual override</label>
+                        <input id="ctl-ind" class="form-control" type="number" min="0" step="100"
+                               value="@State.FlowState.IndividualLimitCredits"
+                               @onchange="e => SetField(e, v => State.FlowState.IndividualLimitCredits = v)" />
+                        <div class="form-text">Used for architect / power users.</div>
+                    </div>
+                    <div>
+                        <label class="form-label fw-semibold" for="ctl-pool">Shared pool remaining</label>
+                        <input id="ctl-pool" class="form-control" type="number" min="0" step="1000"
+                               value="@State.FlowState.PoolRemainingCredits"
+                               @onchange="e => SetField(e, v => State.FlowState.PoolRemainingCredits = v)" />
+                        <div class="form-text">Included credits before paid mode.</div>
+                    </div>
+                    <div>
+                        <label class="form-label fw-semibold" for="ctl-cc">Cost centre metered remaining</label>
+                        <input id="ctl-cc" class="form-control" type="number" min="0" step="1000"
+                               value="@State.FlowState.CostCenterMeteredRemainingCredits"
+                               @onchange="e => SetField(e, v => State.FlowState.CostCenterMeteredRemainingCredits = v)" />
+                        <div class="form-text">Checked after pool exhaustion.</div>
+                    </div>
+                    <div>
+                        <label class="form-label fw-semibold" for="ctl-ent">Enterprise metered remaining</label>
+                        <input id="ctl-ent" class="form-control" type="number" min="0" step="1000"
+                               value="@State.FlowState.EnterpriseMeteredRemainingCredits"
+                               @onchange="e => SetField(e, v => State.FlowState.EnterpriseMeteredRemainingCredits = v)" />
+                        <div class="form-text">Final global cap after pool exhaustion.</div>
+                    </div>
+                    <div class="d-grid gap-2 d-sm-flex">
+                        <button class="btn btn-outline-secondary flex-fill" type="button"
+                                @onclick="State.Reset">Reset</button>
+                        <button class="btn btn-success flex-fill" type="button"
+                                @onclick="Run">Run</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* ── Right: Results ── *@
+    <div class="col-xl-8">
+
+        @* Simulation mode *@
+        <div class="card ubb-card mb-4">
+            <div class="card-body">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <div>
+                        <h2 class="ubb-card-title mb-1">Simulation mode</h2>
+                        <p class="ubb-muted mb-0">Run a single request or a multi-step agentic workflow.</p>
+                    </div>
+                    <div class="ubb-mode-tabs" role="tablist" aria-label="Simulation mode">
+                        <button class="ubb-mode-tab @ModeClass(SimulationMode.Single)" type="button"
+                                role="tab" aria-selected="@(State.FlowState.Mode == SimulationMode.Single)"
+                                @onclick="() => State.SetMode(SimulationMode.Single)">
+                            Single request
+                        </button>
+                        <button class="ubb-mode-tab @ModeClass(SimulationMode.Agentic)" type="button"
+                                role="tab" aria-selected="@(State.FlowState.Mode == SimulationMode.Agentic)"
+                                @onclick="() => State.SetMode(SimulationMode.Agentic)">
+                            Agentic workflow
+                        </button>
+                    </div>
+                </div>
+
+                @if (State.FlowState.Mode == SimulationMode.Single)
+                {
+                    <div class="mt-4">
+                        <label class="form-label fw-semibold" for="ctl-req">Request size in AI credits</label>
+                        <input id="ctl-req" class="form-control" type="number" min="0" step="100"
+                               value="@State.FlowState.SingleRequestCredits"
+                               @onchange="e => SetField(e, v => State.FlowState.SingleRequestCredits = v)" />
+                        <div class="form-text">Example: 1,200 for normal usage; 4,000 to exceed a 2,500 ULB.</div>
+                    </div>
+                }
+                else
+                {
+                    <div class="mt-4">
+                        <AgenticWorkflow Steps="State.FlowState.Steps"
+                                         OnStepCreditsChanged="OnStepChanged" />
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* Flow diagram *@
+        <div class="card ubb-card mb-4">
+            <div class="card-body">
+                <h2 class="ubb-card-title">Flow diagram</h2>
+                <FlowDiagram FlowState="State.FlowState" />
+            </div>
+        </div>
+
+        @* Log + Presets *@
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="card ubb-card h-100">
+                    <div class="card-body">
+                        <h2 class="ubb-card-title">Execution log</h2>
+                        <ExecutionLog Logs="State.FlowState.Logs" />
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card ubb-card h-100">
+                    <div class="card-body">
+                        <h2 class="ubb-card-title">Scenario presets</h2>
+                        <PresetPanel OnPresetSelected="State.ApplyPreset" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    protected override void OnInitialized() => State.OnChange += StateHasChanged;
+
+    public void Dispose() => State.OnChange -= StateHasChanged;
+
+    private void Run()
+    {
+        if (State.FlowState.Mode == SimulationMode.Single) State.RunSingle();
+        else State.RunAgentic();
+    }
+
+    private void OnStepChanged((string Id, decimal Credits) change) =>
+        State.UpdateStepCredits(change.Id, change.Credits);
+
+    private void SetField(ChangeEventArgs e, Action<decimal> setter)
+    {
+        if (decimal.TryParse(e.Value?.ToString(), out var v))
+            setter(Math.Max(0, v));
+    }
+
+    private string BtnClass(UserType t) =>
+        State.FlowState.UserType == t ? "btn-primary" : "btn-outline-primary";
+
+    private string ModeClass(SimulationMode m) =>
+        State.FlowState.Mode == m ? "active" : "";
+}

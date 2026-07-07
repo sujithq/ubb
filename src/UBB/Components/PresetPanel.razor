@@ -1,0 +1,14 @@
+<div class="ubb-presets">
+    @foreach (var preset in ScenarioPresets.RequestPresets)
+    {
+        var p = preset;
+        <button type="button" class="ubb-preset-btn" @onclick="() => OnPresetSelected.InvokeAsync(p)">
+            <div class="ubb-preset-title">@p.Label</div>
+            <div class="ubb-preset-description">@p.Description</div>
+        </button>
+    }
+</div>
+
+@code {
+    [Parameter] public EventCallback<RequestPreset> OnPresetSelected { get; set; }
+}

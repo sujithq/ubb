@@ -1,0 +1,32 @@
+<div class="row g-3">
+    <div class="col-6 col-lg-3">
+        <div class="ubb-stat-card">
+            <div class="ubb-stat-label">User used</div>
+            <div class="ubb-stat-value">@Fmt(FlowState.UserUsedCredits)</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="ubb-stat-card">
+            <div class="ubb-stat-label">Pool</div>
+            <div class="ubb-stat-value">@Fmt(FlowState.PoolRemainingCredits)</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="ubb-stat-card">
+            <div class="ubb-stat-label">Cost centre</div>
+            <div class="ubb-stat-value">@Fmt(FlowState.CostCenterMeteredRemainingCredits)</div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="ubb-stat-card">
+            <div class="ubb-stat-label">Enterprise cap</div>
+            <div class="ubb-stat-value">@Fmt(FlowState.EnterpriseMeteredRemainingCredits)</div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public RequestFlowState FlowState { get; set; } = new();
+
+    private static string Fmt(decimal value) => Math.Max(0, Math.Round(value)).ToString("N0");
+}

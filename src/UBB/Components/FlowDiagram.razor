@@ -1,0 +1,75 @@
+<div class="row g-3 mt-1">
+    <div class="col-md-4">
+        <div class="ubb-node @Cls("user")">
+            <div class="ubb-node-title">1. User-level control</div>
+            <div class="ubb-node-detail">@UserDetail</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="ubb-node @Cls("pool")">
+            <div class="ubb-node-title">2. Shared pool</div>
+            <div class="ubb-node-detail">@Fmt(FlowState.PoolRemainingCredits) credits remaining</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="ubb-node @Cls("paid")">
+            <div class="ubb-node-title">3. Paid mode</div>
+            <div class="ubb-node-detail">Only after pool is exhausted.</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="ubb-node @Cls("costCentre")">
+            <div class="ubb-node-title">4. Cost centre</div>
+            <div class="ubb-node-detail">@Fmt(FlowState.CostCenterMeteredRemainingCredits) metered credits left</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="ubb-node @Cls("enterprise")">
+            <div class="ubb-node-title">5. Enterprise cap</div>
+            <div class="ubb-node-detail">@Fmt(FlowState.EnterpriseMeteredRemainingCredits) metered credits left</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="ubb-node @Cls("result")">
+            <div class="ubb-node-title">Result</div>
+            <div class="ubb-node-detail">@ResultDetail</div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public RequestFlowState FlowState { get; set; } = new();
+
+    private string Cls(string key)
+    {
+        if (!FlowState.NodeStates.TryGetValue(key, out var s)) return "";
+        return s switch
+        {
+            FlowNodeState.Pass  => "is-pass",
+            FlowNodeState.Warn  => "is-warn",
+            FlowNodeState.Block => "is-block",
+            _                   => ""
+        };
+    }
+
+    private string UserDetail => FlowState.UserType == UserType.Architect
+        ? $"Individual override: {Fmt(FlowState.IndividualLimitCredits)}"
+        : $"ULB: {Fmt(FlowState.UniversalLimitCredits)}";
+
+    private string ResultDetail
+    {
+        get
+        {
+            if (!FlowState.NodeStates.TryGetValue("result", out var s)) return "Run a scenario.";
+            return s switch
+            {
+                FlowNodeState.Block => "Request blocked",
+                FlowNodeState.Warn  => "Paid usage allowed",
+                FlowNodeState.Pass  => "Free pool usage",
+                _                   => "Run a scenario."
+            };
+        }
+    }
+
+    private static string Fmt(decimal value) => Math.Max(0, Math.Round(value)).ToString("N0");
+}

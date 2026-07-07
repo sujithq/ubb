@@ -1,0 +1,92 @@
+using UBB.Models;
+
+namespace UBB.Services;
+
+public class AppStateService
+{
+    public RequestFlowState FlowState { get; private set; } = new();
+
+    public event Action? OnChange;
+
+    private void Notify() => OnChange?.Invoke();
+
+    public void Reset()
+    {
+        FlowState = new RequestFlowState();
+        Notify();
+    }
+
+    public void SetUserType(UserType type)
+    {
+        FlowState.UserType = type;
+        Notify();
+    }
+
+    public void SetMode(SimulationMode mode)
+    {
+        FlowState.Mode = mode;
+        Notify();
+    }
+
+    public void ApplyPreset(RequestPreset preset)
+    {
+        FlowState.UserType = preset.UserType;
+        FlowState.SingleRequestCredits = preset.SingleRequestCredits;
+        FlowState.PoolRemainingCredits = preset.PoolRemainingCredits;
+        FlowState.UserUsedCredits = preset.UserUsedCredits;
+        FlowState.CostCenterMeteredRemainingCredits = preset.CostCenterMeteredRemainingCredits;
+        FlowState.EnterpriseMeteredRemainingCredits = preset.EnterpriseMeteredRemainingCredits;
+        FlowState.Logs = [$"Preset loaded: {preset.Label}", preset.Description];
+        FlowState.NodeStates = FlowResult.DefaultNodeStates();
+        Notify();
+    }
+
+    public void RunSingle()
+    {
+        var result = RequestFlowEngine.EvaluateStep(
+            "Single request",
+            FlowState.SingleRequestCredits,
+            FlowState.UserUsedCredits,
+            FlowState.ActiveUserLimit,
+            FlowState.PoolRemainingCredits,
+            FlowState.CostCenterMeteredRemainingCredits,
+            FlowState.EnterpriseMeteredRemainingCredits);
+
+        ApplyResult(result);
+        Notify();
+    }
+
+    public void RunAgentic()
+    {
+        var (logs, nodeStates, userUsed, poolRemaining, ccRemaining, entRemaining) =
+            RequestFlowEngine.RunAgentic(FlowState);
+
+        FlowState.UserUsedCredits = userUsed;
+        FlowState.PoolRemainingCredits = poolRemaining;
+        FlowState.CostCenterMeteredRemainingCredits = ccRemaining;
+        FlowState.EnterpriseMeteredRemainingCredits = entRemaining;
+        FlowState.Logs = logs;
+        FlowState.NodeStates = nodeStates;
+        Notify();
+    }
+
+    public void UpdateStepCredits(string stepId, decimal credits)
+    {
+        var step = FlowState.Steps.FirstOrDefault(s => s.Id == stepId);
+        if (step is not null)
+        {
+            step.Credits = Math.Max(0, credits);
+            Notify();
+        }
+    }
+
+    private void ApplyResult(FlowResult result)
+    {
+        FlowState.UserUsedCredits = result.UserUsedCredits;
+        FlowState.PoolRemainingCredits = result.PoolRemainingCredits;
+        FlowState.CostCenterMeteredRemainingCredits = result.CostCenterMeteredRemainingCredits;
+        FlowState.EnterpriseMeteredRemainingCredits = result.EnterpriseMeteredRemainingCredits;
+        FlowState.Logs = result.Logs;
+        FlowState.NodeStates = result.NodeStates;
+    }
+}

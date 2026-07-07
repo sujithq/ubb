@@ -1,0 +1,22 @@
+<div class="ubb-log" role="log" aria-live="polite">
+    @if (!Logs.Any())
+    {
+        <span class="text-body-secondary">Run a scenario to see the decision trail.</span>
+    }
+    else
+    {
+        @foreach (var line in Logs)
+        {
+            <div class="ubb-log-line @LogClass(line)">@line</div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public List<string> Logs { get; set; } = [];
+
+    private static string LogClass(string line) =>
+        line.StartsWith("BLOCK") ? "ubb-log-block" :
+        line.StartsWith("WARN")  ? "ubb-log-warn"  :
+        line.StartsWith("PASS")  ? "ubb-log-pass"  : "";
+}

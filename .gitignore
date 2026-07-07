@@ -1,0 +1,32 @@
+# Build results
+[Dd]ebug/
+[Rr]elease/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+publish/
+
+# User-specific
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# IDE
+.vs/
+.vscode/
+*.DotSettings.user
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/packages/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Blazor publish output
+**/publish/
