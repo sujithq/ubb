@@ -39,8 +39,8 @@ public class CostCenterBudgetTests
     public void Reset_ResetsNodeStatesToIdle()
     {
         var cc = new CostCenterBudget { MeteredRemainingCredits = 100_000, InitialMeteredBudget = 100_000 };
-        cc.NodeStates["pool"]   = FlowNodeState.Pass;
-        cc.NodeStates["result"] = FlowNodeState.Block;
+        cc.NodeStates[FlowNode.Pool]   = FlowNodeState.Pass;
+        cc.NodeStates[FlowNode.Result] = FlowNodeState.Block;
 
         cc.Reset();
 

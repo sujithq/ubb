@@ -26,20 +26,20 @@ public static class RequestFlowEngine
         // ── Step 1: ULB check ────────────────────────────────────────────────
         if (userUsed + credits > userLimit)
         {
-            nodeStates["user"] = FlowNodeState.Block;
-            nodeStates["result"] = FlowNodeState.Block;
+            nodeStates[FlowNode.User] = FlowNodeState.Block;
+            nodeStates[FlowNode.Result] = FlowNodeState.Block;
             logs.Add($"BLOCK {label}: user-level budget exceeded ({userUsed + credits:N0} / {userLimit:N0} credits).");
             return Blocked(logs, nodeStates, userUsed, poolRemaining, costCenterMeteredRemaining, enterpriseMeteredRemaining);
         }
 
-        nodeStates["user"] = FlowNodeState.Pass;
+        nodeStates[FlowNode.User] = FlowNodeState.Pass;
         logs.Add($"PASS {label}: user-level control passed ({userUsed + credits:N0} / {userLimit:N0} credits).");
 
         // ── Step 2: Pool check ───────────────────────────────────────────────
         if (poolRemaining >= credits)
         {
-            nodeStates["pool"] = FlowNodeState.Pass;
-            nodeStates["result"] = FlowNodeState.Pass;
+            nodeStates[FlowNode.Pool] = FlowNodeState.Pass;
+            nodeStates[FlowNode.Result] = FlowNodeState.Pass;
             logs.Add($"PASS {label}: consumed {credits:N0} credits from the shared pool.");
             return Allowed(false, logs, nodeStates,
                 userUsed + credits, poolRemaining - credits,
@@ -50,30 +50,30 @@ public static class RequestFlowEngine
         var poolPart = Math.Max(0, poolRemaining);
         var paidPart = credits - poolPart;
 
-        nodeStates["pool"] = poolPart > 0 ? FlowNodeState.Warn : FlowNodeState.Block;
-        nodeStates["paid"] = FlowNodeState.Warn;
+        nodeStates[FlowNode.Pool] = poolPart > 0 ? FlowNodeState.Warn : FlowNodeState.Block;
+        nodeStates[FlowNode.Paid] = FlowNodeState.Warn;
         logs.Add($"WARN {label}: pool covers {poolPart:N0}; {paidPart:N0} credits move to metered mode.");
 
         if (costCenterMeteredRemaining < paidPart)
         {
-            nodeStates["costCentre"] = FlowNodeState.Block;
-            nodeStates["result"] = FlowNodeState.Block;
+            nodeStates[FlowNode.CostCentre] = FlowNodeState.Block;
+            nodeStates[FlowNode.Result] = FlowNodeState.Block;
             logs.Add($"BLOCK {label}: cost centre requires {paidPart:N0}, remaining {costCenterMeteredRemaining:N0}.");
             return Blocked(logs, nodeStates, userUsed, poolRemaining, costCenterMeteredRemaining, enterpriseMeteredRemaining);
         }
 
-        nodeStates["costCentre"] = FlowNodeState.Pass;
+        nodeStates[FlowNode.CostCentre] = FlowNodeState.Pass;
 
         if (enterpriseMeteredRemaining < paidPart)
         {
-            nodeStates["enterprise"] = FlowNodeState.Block;
-            nodeStates["result"] = FlowNodeState.Block;
+            nodeStates[FlowNode.Enterprise] = FlowNodeState.Block;
+            nodeStates[FlowNode.Result] = FlowNodeState.Block;
             logs.Add($"BLOCK {label}: enterprise metered cap requires {paidPart:N0}, remaining {enterpriseMeteredRemaining:N0}.");
             return Blocked(logs, nodeStates, userUsed, poolRemaining, costCenterMeteredRemaining, enterpriseMeteredRemaining);
         }
 
-        nodeStates["enterprise"] = FlowNodeState.Pass;
-        nodeStates["result"] = FlowNodeState.Warn;
+        nodeStates[FlowNode.Enterprise] = FlowNodeState.Pass;
+        nodeStates[FlowNode.Result] = FlowNodeState.Warn;
         logs.Add($"PASS {label}: metered usage allowed for {paidPart:N0} credits (${paidPart * BillingConstants.CreditValueDollars:F2}).");
 
         return Allowed(true, logs, nodeStates,
@@ -82,7 +82,7 @@ public static class RequestFlowEngine
             enterpriseMeteredRemaining - paidPart);
     }
 
-    public static (List<string> Logs, Dictionary<string, FlowNodeState> NodeStates,
+    public static (List<string> Logs, Dictionary<FlowNode, FlowNodeState> NodeStates,
                    decimal UserUsed, decimal PoolRemaining, decimal CcRemaining, decimal EntRemaining)
         RunAgentic(RequestFlowState state)
     {
@@ -146,8 +146,8 @@ public static class RequestFlowEngine
                 {
                     state.PoolRemainingCredits -= requestCredits;
                     cc.CreditsConsumed += requestCredits;
-                    cc.NodeStates["pool"]   = FlowNodeState.Pass;
-                    cc.NodeStates["result"] = FlowNodeState.Pass;
+                    cc.NodeStates[FlowNode.Pool]   = FlowNodeState.Pass;
+                    cc.NodeStates[FlowNode.Result] = FlowNodeState.Pass;
                     state.AddLog($"  User {user}: ✓ drew {requestCredits:N0} from pool (pool now: {state.PoolRemainingCredits:N0})");
                     continue;
                 }
@@ -158,40 +158,40 @@ public static class RequestFlowEngine
 
                 if (state.PoolRemainingCredits > 0)
                 {
-                    cc.NodeStates["pool"] = FlowNodeState.Warn;
+                    cc.NodeStates[FlowNode.Pool] = FlowNodeState.Warn;
                     state.PoolRemainingCredits = 0;
                     state.AddLog($"  User {user}: ✓ drew {poolPart:N0} from pool (pool exhausted)");
                 }
                 else
                 {
-                    cc.NodeStates["pool"] = FlowNodeState.Block;
+                    cc.NodeStates[FlowNode.Pool] = FlowNodeState.Block;
                 }
 
-                cc.NodeStates["paid"] = FlowNodeState.Warn;
+                cc.NodeStates[FlowNode.Paid] = FlowNodeState.Warn;
 
                 // Step 3: Can CC cover metered from its budget?
                 var ccPay = Math.Min(meteredNeeded, cc.MeteredRemainingCredits);
                 if (ccPay < meteredNeeded)
                 {
-                    cc.NodeStates["costCentre"] = FlowNodeState.Block;
-                    cc.NodeStates["result"]     = FlowNodeState.Block;
+                    cc.NodeStates[FlowNode.CostCentre] = FlowNodeState.Block;
+                    cc.NodeStates[FlowNode.Result]     = FlowNodeState.Block;
                     state.AddLog($"  User {user}: ✗ blocked - needs {meteredNeeded:N0}, CC has {cc.MeteredRemainingCredits:N0}");
                     continue;
                 }
 
-                cc.NodeStates["costCentre"] = FlowNodeState.Pass;
+                cc.NodeStates[FlowNode.CostCentre] = FlowNodeState.Pass;
 
                 // Step 4: Can enterprise cap cover?
                 if (state.EnterpriseMeteredRemainingCredits < meteredNeeded)
                 {
-                    cc.NodeStates["enterprise"] = FlowNodeState.Block;
-                    cc.NodeStates["result"]     = FlowNodeState.Block;
+                    cc.NodeStates[FlowNode.Enterprise] = FlowNodeState.Block;
+                    cc.NodeStates[FlowNode.Result]     = FlowNodeState.Block;
                     state.AddLog($"  User {user}: ✗ blocked - enterprise cap insufficient ({state.EnterpriseMeteredRemainingCredits:N0} / {meteredNeeded:N0})");
                     continue;
                 }
 
-                cc.NodeStates["enterprise"] = FlowNodeState.Pass;
-                cc.NodeStates["result"]     = FlowNodeState.Warn;
+                cc.NodeStates[FlowNode.Enterprise] = FlowNodeState.Pass;
+                cc.NodeStates[FlowNode.Result]     = FlowNodeState.Warn;
                 cc.ConsumeMetered(meteredNeeded);
                 state.EnterpriseMeteredRemainingCredits -= meteredNeeded;
                 state.AddLog($"  User {user}: ✓ drew {meteredNeeded:N0} from metered (CC: {cc.MeteredRemainingCredits:N0} | Ent: {state.EnterpriseMeteredRemainingCredits:N0})");
@@ -209,13 +209,13 @@ public static class RequestFlowEngine
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────
-    private static FlowResult Blocked(List<string> logs, Dictionary<string, FlowNodeState> nodeStates,
+    private static FlowResult Blocked(List<string> logs, Dictionary<FlowNode, FlowNodeState> nodeStates,
         decimal userUsed, decimal poolRemaining, decimal ccRemaining, decimal entRemaining) =>
         new() { Blocked = true, Logs = logs, NodeStates = nodeStates,
                 UserUsedCredits = userUsed, PoolRemainingCredits = poolRemaining,
                 CostCenterMeteredRemainingCredits = ccRemaining, EnterpriseMeteredRemainingCredits = entRemaining };
 
-    private static FlowResult Allowed(bool metered, List<string> logs, Dictionary<string, FlowNodeState> nodeStates,
+    private static FlowResult Allowed(bool metered, List<string> logs, Dictionary<FlowNode, FlowNodeState> nodeStates,
         decimal userUsed, decimal poolRemaining, decimal ccRemaining, decimal entRemaining) =>
         new() { Blocked = false, Logs = logs, NodeStates = nodeStates,
                 UserUsedCredits = userUsed, PoolRemainingCredits = poolRemaining,

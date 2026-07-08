@@ -25,7 +25,7 @@ public class RequestFlowEngineTests
         => RequestFlowEngine.EvaluateStep("test", credits, userUsed, userLimit,
                                           poolRemaining, ccRemaining, entRemaining);
 
-    private static FlowNodeState NodeOf(FlowResult r, string key)
+    private static FlowNodeState NodeOf(FlowResult r, FlowNode key)
         => r.NodeStates.TryGetValue(key, out var s) ? s : FlowNodeState.Idle;
 
     // ── Step 1: ULB check ────────────────────────────────────────────────────
@@ -36,7 +36,7 @@ public class RequestFlowEngineTests
         var result = Evaluate(credits: 1_000, userUsed: 0, userLimit: 2_500);
 
         result.Blocked.Should().BeFalse();
-        NodeOf(result, "user").Should().Be(FlowNodeState.Pass);
+        NodeOf(result, FlowNode.User).Should().Be(FlowNodeState.Pass);
     }
 
     [Fact]
@@ -45,8 +45,8 @@ public class RequestFlowEngineTests
         var result = Evaluate(credits: 4_000, userUsed: 0, userLimit: 2_500);
 
         result.Blocked.Should().BeTrue();
-        NodeOf(result, "user").Should().Be(FlowNodeState.Block);
-        NodeOf(result, "result").Should().Be(FlowNodeState.Block);
+        NodeOf(result, FlowNode.User).Should().Be(FlowNodeState.Block);
+        NodeOf(result, FlowNode.Result).Should().Be(FlowNodeState.Block);
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public class RequestFlowEngineTests
         var result = Evaluate(credits: 1_000, userUsed: 2_000, userLimit: 2_500);
 
         result.Blocked.Should().BeTrue();
-        NodeOf(result, "user").Should().Be(FlowNodeState.Block);
+        NodeOf(result, FlowNode.User).Should().Be(FlowNodeState.Block);
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public class RequestFlowEngineTests
         var result = Evaluate(credits: 2_500, userUsed: 0, userLimit: 2_500);
 
         result.Blocked.Should().BeFalse();
-        NodeOf(result, "user").Should().Be(FlowNodeState.Pass);
+        NodeOf(result, FlowNode.User).Should().Be(FlowNodeState.Pass);
     }
 
     [Fact]
@@ -75,7 +75,7 @@ public class RequestFlowEngineTests
         var result = Evaluate(credits: 6_000, userUsed: 0, userLimit: 8_000);
 
         result.Blocked.Should().BeFalse();
-        NodeOf(result, "user").Should().Be(FlowNodeState.Pass);
+        NodeOf(result, FlowNode.User).Should().Be(FlowNodeState.Pass);
     }
 
     [Fact]
@@ -99,8 +99,8 @@ public class RequestFlowEngineTests
 
         result.Blocked.Should().BeFalse();
         result.PoolRemainingCredits.Should().Be(389_000);
-        NodeOf(result, "pool").Should().Be(FlowNodeState.Pass);
-        NodeOf(result, "result").Should().Be(FlowNodeState.Pass);
+        NodeOf(result, FlowNode.Pool).Should().Be(FlowNodeState.Pass);
+        NodeOf(result, FlowNode.Result).Should().Be(FlowNodeState.Pass);
     }
 
     [Fact]
@@ -110,7 +110,7 @@ public class RequestFlowEngineTests
 
         result.Blocked.Should().BeFalse();
         result.PoolRemainingCredits.Should().Be(0);
-        NodeOf(result, "pool").Should().Be(FlowNodeState.Pass);
+        NodeOf(result, FlowNode.Pool).Should().Be(FlowNodeState.Pass);
     }
 
     [Fact]
@@ -136,9 +136,9 @@ public class RequestFlowEngineTests
         result.PoolRemainingCredits.Should().Be(0);
         result.CostCenterMeteredRemainingCredits.Should().Be(198_500); // 200000 - 1500
         result.EnterpriseMeteredRemainingCredits.Should().Be(998_500); // 1000000 - 1500
-        NodeOf(result, "pool").Should().Be(FlowNodeState.Warn);
-        NodeOf(result, "paid").Should().Be(FlowNodeState.Warn);
-        NodeOf(result, "result").Should().Be(FlowNodeState.Warn);
+        NodeOf(result, FlowNode.Pool).Should().Be(FlowNodeState.Warn);
+        NodeOf(result, FlowNode.Paid).Should().Be(FlowNodeState.Warn);
+        NodeOf(result, FlowNode.Result).Should().Be(FlowNodeState.Warn);
     }
 
     [Fact]
@@ -150,7 +150,7 @@ public class RequestFlowEngineTests
         result.Blocked.Should().BeFalse();
         result.CostCenterMeteredRemainingCredits.Should().Be(198_000);
         result.EnterpriseMeteredRemainingCredits.Should().Be(998_000);
-        NodeOf(result, "pool").Should().Be(FlowNodeState.Block);
+        NodeOf(result, FlowNode.Pool).Should().Be(FlowNodeState.Block);
     }
 
     // ── Step 3b: Cost centre block ───────────────────────────────────────────
@@ -164,8 +164,8 @@ public class RequestFlowEngineTests
                                poolRemaining: 0, ccRemaining: 3_000, entRemaining: 1_000_000);
 
         result.Blocked.Should().BeTrue();
-        NodeOf(result, "costCentre").Should().Be(FlowNodeState.Block);
-        NodeOf(result, "result").Should().Be(FlowNodeState.Block);
+        NodeOf(result, FlowNode.CostCentre).Should().Be(FlowNodeState.Block);
+        NodeOf(result, FlowNode.Result).Should().Be(FlowNodeState.Block);
     }
 
     [Fact]
@@ -177,7 +177,7 @@ public class RequestFlowEngineTests
                                poolRemaining: 1_000, ccRemaining: 2_000, entRemaining: 1_000_000);
 
         result.Blocked.Should().BeFalse();
-        NodeOf(result, "costCentre").Should().Be(FlowNodeState.Pass);
+        NodeOf(result, FlowNode.CostCentre).Should().Be(FlowNodeState.Pass);
         result.CostCenterMeteredRemainingCredits.Should().Be(0);
     }
 
@@ -201,8 +201,8 @@ public class RequestFlowEngineTests
                                poolRemaining: 0, ccRemaining: 200_000, entRemaining: 3_000);
 
         result.Blocked.Should().BeTrue();
-        NodeOf(result, "enterprise").Should().Be(FlowNodeState.Block);
-        NodeOf(result, "result").Should().Be(FlowNodeState.Block);
+        NodeOf(result, FlowNode.Enterprise).Should().Be(FlowNodeState.Block);
+        NodeOf(result, FlowNode.Result).Should().Be(FlowNodeState.Block);
     }
 
     [Fact]
@@ -212,7 +212,7 @@ public class RequestFlowEngineTests
                                ccRemaining: 200_000, entRemaining: 2_000);
 
         result.Blocked.Should().BeFalse();
-        NodeOf(result, "enterprise").Should().Be(FlowNodeState.Pass);
+        NodeOf(result, FlowNode.Enterprise).Should().Be(FlowNodeState.Pass);
         result.EnterpriseMeteredRemainingCredits.Should().Be(0);
     }
 

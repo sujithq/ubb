@@ -69,7 +69,7 @@ public class ScenarioPresetsTests
         var result = RunPreset(ScenarioPresets.RequestPresets.Single(p => p.Key == "normal"));
 
         result.Blocked.Should().BeFalse();
-        result.NodeStates["result"].Should().Be(FlowNodeState.Pass);
+        result.NodeStates[FlowNode.Result].Should().Be(FlowNodeState.Pass);
     }
 
     [Fact]
@@ -94,7 +94,7 @@ public class ScenarioPresetsTests
         var result = RunPreset(ScenarioPresets.RequestPresets.Single(p => p.Key == "poolLow"));
 
         result.Blocked.Should().BeFalse();
-        result.NodeStates["result"].Should().Be(FlowNodeState.Warn);
+        result.NodeStates[FlowNode.Result].Should().Be(FlowNodeState.Warn);
     }
 
     [Fact]
@@ -103,7 +103,7 @@ public class ScenarioPresetsTests
         var result = RunPreset(ScenarioPresets.RequestPresets.Single(p => p.Key == "ccBlock"));
 
         result.Blocked.Should().BeTrue();
-        result.NodeStates["costCentre"].Should().Be(FlowNodeState.Block);
+        result.NodeStates[FlowNode.CostCentre].Should().Be(FlowNodeState.Block);
     }
 
     [Fact]
@@ -112,7 +112,7 @@ public class ScenarioPresetsTests
         var result = RunPreset(ScenarioPresets.RequestPresets.Single(p => p.Key == "enterpriseBlock"));
 
         result.Blocked.Should().BeTrue();
-        result.NodeStates["enterprise"].Should().Be(FlowNodeState.Block);
+        result.NodeStates[FlowNode.Enterprise].Should().Be(FlowNodeState.Block);
     }
 
     // ── Multi-CC preset smoke tests ───────────────────────────────────────────
@@ -127,7 +127,7 @@ public class ScenarioPresetsTests
         RequestFlowEngine.RunMultiCostCenter(state);
 
         state.CostCenters.Should().AllSatisfy(cc =>
-            cc.NodeStates["result"].Should().Be(FlowNodeState.Pass));
+            cc.NodeStates[FlowNode.Result].Should().Be(FlowNodeState.Pass));
     }
 
     [Fact]
@@ -140,6 +140,6 @@ public class ScenarioPresetsTests
         RequestFlowEngine.RunMultiCostCenter(state);
 
         state.CostCenters.Should().Contain(cc =>
-            cc.NodeStates["result"] == FlowNodeState.Block);
+            cc.NodeStates[FlowNode.Result] == FlowNodeState.Block);
     }
 }

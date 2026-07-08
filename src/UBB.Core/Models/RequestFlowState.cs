@@ -13,7 +13,7 @@ public class RequestFlowState
     public SimulationMode Mode { get; set; } = SimulationMode.Single;
     public List<AgenticStep> Steps { get; set; } = DefaultAgenticSteps();
     public List<string> Logs { get; set; } = [];
-    public Dictionary<string, FlowNodeState> NodeStates { get; set; } = FlowResult.DefaultNodeStates();
+    public Dictionary<FlowNode, FlowNodeState> NodeStates { get; set; } = FlowResult.DefaultNodeStates();
 
     public decimal ActiveUserLimit =>
         UserType == UserType.Architect ? IndividualLimitCredits : UniversalLimitCredits;

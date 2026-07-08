@@ -38,7 +38,7 @@ public class MultiCostCenterEngineTests
 
         RequestFlowEngine.RunMultiCostCenter(state);
 
-        state.CostCenters.Should().AllSatisfy(cc => cc.NodeStates["result"].Should().Be(FlowNodeState.Pass));
+        state.CostCenters.Should().AllSatisfy(cc => cc.NodeStates[FlowNode.Result].Should().Be(FlowNodeState.Pass));
         state.PoolRemainingCredits.Should().Be(100); // 6100 - 3×2k
         state.EnterpriseMeteredRemainingCredits.Should().Be(1_000_000); // untouched
     }
@@ -53,7 +53,7 @@ public class MultiCostCenterEngineTests
         RequestFlowEngine.RunMultiCostCenter(state);
 
         state.CostCenters.Should().AllSatisfy(cc =>
-            cc.NodeStates["result"].Should().Be(FlowNodeState.Warn)); // metered pass
+            cc.NodeStates[FlowNode.Result].Should().Be(FlowNodeState.Warn)); // metered pass
         state.EnterpriseMeteredRemainingCredits.Should().Be(996_000); // 1M - 2×2k
     }
 
@@ -69,11 +69,11 @@ public class MultiCostCenterEngineTests
         RequestFlowEngine.RunMultiCostCenter(state);
 
         state.PoolRemainingCredits.Should().Be(0);
-        state.CostCenters[0].NodeStates["pool"].Should().Be(FlowNodeState.Warn);
-        state.CostCenters[0].NodeStates["result"].Should().Be(FlowNodeState.Warn);
+        state.CostCenters[0].NodeStates[FlowNode.Pool].Should().Be(FlowNodeState.Warn);
+        state.CostCenters[0].NodeStates[FlowNode.Result].Should().Be(FlowNodeState.Warn);
         // Second CC has no pool left, goes metered
-        state.CostCenters[1].NodeStates["pool"].Should().Be(FlowNodeState.Block);
-        state.CostCenters[1].NodeStates["result"].Should().Be(FlowNodeState.Warn);
+        state.CostCenters[1].NodeStates[FlowNode.Pool].Should().Be(FlowNodeState.Block);
+        state.CostCenters[1].NodeStates[FlowNode.Result].Should().Be(FlowNodeState.Warn);
     }
 
     [Fact]
@@ -85,9 +85,9 @@ public class MultiCostCenterEngineTests
 
         RequestFlowEngine.RunMultiCostCenter(state);
 
-        state.CostCenters[0].NodeStates["result"].Should().Be(FlowNodeState.Pass);  // Gets 2k from pool
-        state.CostCenters[1].NodeStates["result"].Should().Be(FlowNodeState.Pass);  // Gets remaining 2k from pool
-        state.CostCenters[2].NodeStates["result"].Should().Be(FlowNodeState.Warn);  // No pool left, uses 2k metered
+        state.CostCenters[0].NodeStates[FlowNode.Result].Should().Be(FlowNodeState.Pass);  // Gets 2k from pool
+        state.CostCenters[1].NodeStates[FlowNode.Result].Should().Be(FlowNodeState.Pass);  // Gets remaining 2k from pool
+        state.CostCenters[2].NodeStates[FlowNode.Result].Should().Be(FlowNodeState.Warn);  // No pool left, uses 2k metered
         state.PoolRemainingCredits.Should().Be(0);
     }
 
@@ -102,9 +102,9 @@ public class MultiCostCenterEngineTests
 
         RequestFlowEngine.RunMultiCostCenter(state);
 
-        state.CostCenters[0].NodeStates["result"].Should().Be(FlowNodeState.Warn); // metered pass
-        state.CostCenters[1].NodeStates["result"].Should().Be(FlowNodeState.Block);
-        state.CostCenters[1].NodeStates["costCentre"].Should().Be(FlowNodeState.Block);
+        state.CostCenters[0].NodeStates[FlowNode.Result].Should().Be(FlowNodeState.Warn); // metered pass
+        state.CostCenters[1].NodeStates[FlowNode.Result].Should().Be(FlowNodeState.Block);
+        state.CostCenters[1].NodeStates[FlowNode.CostCentre].Should().Be(FlowNodeState.Block);
     }
 
     [Fact]
@@ -142,10 +142,10 @@ public class MultiCostCenterEngineTests
 
         RequestFlowEngine.RunMultiCostCenter(state);
 
-        state.CostCenters[0].NodeStates["result"].Should().Be(FlowNodeState.Warn);
-        state.CostCenters[1].NodeStates["result"].Should().Be(FlowNodeState.Warn);
-        state.CostCenters[2].NodeStates["result"].Should().Be(FlowNodeState.Block);
-        state.CostCenters[2].NodeStates["enterprise"].Should().Be(FlowNodeState.Block);
+        state.CostCenters[0].NodeStates[FlowNode.Result].Should().Be(FlowNodeState.Warn);
+        state.CostCenters[1].NodeStates[FlowNode.Result].Should().Be(FlowNodeState.Warn);
+        state.CostCenters[2].NodeStates[FlowNode.Result].Should().Be(FlowNodeState.Block);
+        state.CostCenters[2].NodeStates[FlowNode.Enterprise].Should().Be(FlowNodeState.Block);
     }
 
     [Fact]
@@ -170,12 +170,12 @@ public class MultiCostCenterEngineTests
 
         // Run once (pass)
         RequestFlowEngine.RunMultiCostCenter(state);
-        state.CostCenters[0].NodeStates["result"].Should().Be(FlowNodeState.Pass);
+        state.CostCenters[0].NodeStates[FlowNode.Result].Should().Be(FlowNodeState.Pass);
 
         // Drain pool and run again (should now be metered)
         state.PoolRemainingCredits = 0;
         RequestFlowEngine.RunMultiCostCenter(state);
-        state.CostCenters[0].NodeStates["result"].Should().Be(FlowNodeState.Warn);
+        state.CostCenters[0].NodeStates[FlowNode.Result].Should().Be(FlowNodeState.Warn);
     }
 
     [Fact]
@@ -187,11 +187,11 @@ public class MultiCostCenterEngineTests
         RequestFlowEngine.RunMultiCostCenter(state);
 
         var cc = state.CostCenters[0];
-        cc.NodeStates["pool"].Should().Be(FlowNodeState.Pass);
-        cc.NodeStates["paid"].Should().Be(FlowNodeState.Idle);
-        cc.NodeStates["costCentre"].Should().Be(FlowNodeState.Idle);
-        cc.NodeStates["enterprise"].Should().Be(FlowNodeState.Idle);
-        cc.NodeStates["result"].Should().Be(FlowNodeState.Pass);
+        cc.NodeStates[FlowNode.Pool].Should().Be(FlowNodeState.Pass);
+        cc.NodeStates[FlowNode.Paid].Should().Be(FlowNodeState.Idle);
+        cc.NodeStates[FlowNode.CostCentre].Should().Be(FlowNodeState.Idle);
+        cc.NodeStates[FlowNode.Enterprise].Should().Be(FlowNodeState.Idle);
+        cc.NodeStates[FlowNode.Result].Should().Be(FlowNodeState.Pass);
     }
 
     [Fact]
@@ -203,11 +203,11 @@ public class MultiCostCenterEngineTests
         RequestFlowEngine.RunMultiCostCenter(state);
 
         var cc = state.CostCenters[0];
-        cc.NodeStates["pool"].Should().Be(FlowNodeState.Block);
-        cc.NodeStates["paid"].Should().Be(FlowNodeState.Warn);
-        cc.NodeStates["costCentre"].Should().Be(FlowNodeState.Pass);
-        cc.NodeStates["enterprise"].Should().Be(FlowNodeState.Pass);
-        cc.NodeStates["result"].Should().Be(FlowNodeState.Warn);
+        cc.NodeStates[FlowNode.Pool].Should().Be(FlowNodeState.Block);
+        cc.NodeStates[FlowNode.Paid].Should().Be(FlowNodeState.Warn);
+        cc.NodeStates[FlowNode.CostCentre].Should().Be(FlowNodeState.Pass);
+        cc.NodeStates[FlowNode.Enterprise].Should().Be(FlowNodeState.Pass);
+        cc.NodeStates[FlowNode.Result].Should().Be(FlowNodeState.Warn);
     }
 
     // ── Configurable request size ─────────────────────────────────────────────
@@ -223,8 +223,8 @@ public class MultiCostCenterEngineTests
 
         // First CC draws 10k from pool (5k left), second CC draws 5k from pool + 5k metered
         state.PoolRemainingCredits.Should().Be(0);
-        state.CostCenters[0].NodeStates["result"].Should().Be(FlowNodeState.Pass);
-        state.CostCenters[1].NodeStates["result"].Should().Be(FlowNodeState.Warn);
+        state.CostCenters[0].NodeStates[FlowNode.Result].Should().Be(FlowNodeState.Pass);
+        state.CostCenters[1].NodeStates[FlowNode.Result].Should().Be(FlowNodeState.Warn);
     }
 
     // ── Logs ─────────────────────────────────────────────────────────────────

@@ -33,7 +33,7 @@ public class AgenticFlowEngineTests
         var (logs, nodeStates, userUsed, poolRemaining, _, _) = RequestFlowEngine.RunAgentic(state);
 
         logs.Should().NotContain(l => l.Contains("Stopped at step"));
-        nodeStates["result"].Should().Be(FlowNodeState.Pass);
+        nodeStates[FlowNode.Result].Should().Be(FlowNodeState.Pass);
         userUsed.Should().Be(5_150);
         poolRemaining.Should().Be(390_000 - 5_150);
     }
@@ -46,7 +46,7 @@ public class AgenticFlowEngineTests
         var (logs, nodeStates, _, _, _, _) = RequestFlowEngine.RunAgentic(state);
 
         logs.Should().Contain(l => l.Contains("Stopped at step"));
-        nodeStates["result"].Should().Be(FlowNodeState.Block);
+        nodeStates[FlowNode.Result].Should().Be(FlowNodeState.Block);
     }
 
     [Fact]
@@ -58,7 +58,7 @@ public class AgenticFlowEngineTests
         var (logs, nodeStates, _, _, _, _) = RequestFlowEngine.RunAgentic(state);
 
         logs.Should().Contain(l => l.Contains("Stopped at step"));
-        nodeStates["result"].Should().Be(FlowNodeState.Block);
+        nodeStates[FlowNode.Result].Should().Be(FlowNodeState.Block);
     }
 
     [Fact]
@@ -69,7 +69,7 @@ public class AgenticFlowEngineTests
         var (logs, nodeStates, _, _, _, _) = RequestFlowEngine.RunAgentic(state);
 
         logs.Should().Contain(l => l.Contains("Stopped at step"));
-        nodeStates["result"].Should().Be(FlowNodeState.Block);
+        nodeStates[FlowNode.Result].Should().Be(FlowNodeState.Block);
     }
 
     [Fact]
@@ -81,7 +81,7 @@ public class AgenticFlowEngineTests
             = RequestFlowEngine.RunAgentic(state);
 
         logs.Should().NotContain(l => l.Contains("Stopped at step"));
-        nodeStates["result"].Should().Be(FlowNodeState.Warn); // metered pass = Warn
+        nodeStates[FlowNode.Result].Should().Be(FlowNodeState.Warn); // metered pass = Warn
         userUsed.Should().Be(5_150);
         poolRemaining.Should().Be(0);
         ccRemaining.Should().Be(200_000 - 5_150);

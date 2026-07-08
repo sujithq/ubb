@@ -10,31 +10,31 @@
     </div>
     <div class="row g-2">
         <div class="col">
-            <div class="ubb-node py-2 @Cls("pool")">
+            <div class="ubb-node py-2 @Cls(FlowNode.Pool)">
                 <div class="ubb-node-title" style="font-size:.75rem;">2. Shared pool</div>
-                <div class="ubb-node-detail" style="font-size:.7rem;">@StateLabel("pool")</div>
+                <div class="ubb-node-detail" style="font-size:.7rem;">@StateLabel(FlowNode.Pool)</div>
             </div>
         </div>
         <div class="col">
-            <div class="ubb-node py-2 @Cls("paid")">
+            <div class="ubb-node py-2 @Cls(FlowNode.Paid)">
                 <div class="ubb-node-title" style="font-size:.75rem;">3. Paid mode</div>
-                <div class="ubb-node-detail" style="font-size:.7rem;">@StateLabel("paid")</div>
+                <div class="ubb-node-detail" style="font-size:.7rem;">@StateLabel(FlowNode.Paid)</div>
             </div>
         </div>
         <div class="col">
-            <div class="ubb-node py-2 @Cls("costCentre")">
+            <div class="ubb-node py-2 @Cls(FlowNode.CostCentre)">
                 <div class="ubb-node-title" style="font-size:.75rem;">4. CC budget</div>
                 <div class="ubb-node-detail" style="font-size:.7rem;">@Fmt(Cc.MeteredRemainingCredits) left</div>
             </div>
         </div>
         <div class="col">
-            <div class="ubb-node py-2 @Cls("enterprise")">
+            <div class="ubb-node py-2 @Cls(FlowNode.Enterprise)">
                 <div class="ubb-node-title" style="font-size:.75rem;">5. Enterprise cap</div>
-                <div class="ubb-node-detail" style="font-size:.7rem;">@StateLabel("enterprise")</div>
+                <div class="ubb-node-detail" style="font-size:.7rem;">@StateLabel(FlowNode.Enterprise)</div>
             </div>
         </div>
         <div class="col">
-            <div class="ubb-node py-2 @Cls("result")">
+            <div class="ubb-node py-2 @Cls(FlowNode.Result)">
                 <div class="ubb-node-title" style="font-size:.75rem;">Result</div>
                 <div class="ubb-node-detail" style="font-size:.7rem;">@ResultLabel</div>
             </div>
@@ -45,9 +45,9 @@
 @code {
     [Parameter, EditorRequired] public CostCenterBudget Cc { get; set; } = default!;
 
-    private string Cls(string key)
+    private string Cls(FlowNode node)
     {
-        if (!Cc.NodeStates.TryGetValue(key, out var s)) return "";
+        if (!Cc.NodeStates.TryGetValue(node, out var s)) return "";
         return s switch
         {
             FlowNodeState.Pass  => "is-pass",
@@ -57,9 +57,9 @@
         };
     }
 
-    private string StateLabel(string key)
+    private string StateLabel(FlowNode node)
     {
-        if (!Cc.NodeStates.TryGetValue(key, out var s)) return "—";
+        if (!Cc.NodeStates.TryGetValue(node, out var s)) return "—";
         return s switch
         {
             FlowNodeState.Pass  => "✓ Pass",
@@ -73,7 +73,7 @@
     {
         get
         {
-            if (!Cc.NodeStates.TryGetValue("result", out var s)) return "—";
+            if (!Cc.NodeStates.TryGetValue(FlowNode.Result, out var s)) return "—";
             return s switch
             {
                 FlowNodeState.Pass  => "Pool usage",
