@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="bunit" Version="1.40.0" />
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="xunit" Version="2.9.3" />
@@ -17,6 +18,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\UBB.Core\UBB.Core.csproj" />
+    <!-- Reference the Blazor app for service + component tests.
+         IsBlazorWebAssemblyStandalone=false prevents the WASM publish pipeline
+         from running during dotnet test. -->
+    <ProjectReference Include="..\..\src\UBB\UBB.csproj"
+                      IsBlazorWebAssemblyStandalone="false" />
   </ItemGroup>
 
   <ItemGroup>

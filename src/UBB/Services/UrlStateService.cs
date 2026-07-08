@@ -23,8 +23,9 @@ public class UrlStateService
             var json = Encoding.UTF8.GetString(Convert.FromBase64String(padded));
             return JsonSerializer.Deserialize<SimulationConfig>(json);
         }
-        catch
+        catch (Exception ex)
         {
+            Console.Error.WriteLine($"[UrlStateService] Failed to deserialize URL state: {ex.Message}");
             return null;
         }
     }

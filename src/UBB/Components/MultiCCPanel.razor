@@ -220,7 +220,10 @@
     {
         if (CurrentState == null || idx < 0 || idx >= CurrentState.CostCenters.Count) return;
         if (int.TryParse(e.Value?.ToString() ?? "0", out var v))
+        {
             CurrentState.CostCenters[idx].MeteredRemainingCredits = v;
+            CurrentState.CostCenters[idx].InitialMeteredBudget    = v; // keep reset baseline in sync
+        }
     }
 
     private void AddCostCenter()
@@ -228,9 +231,10 @@
         if (CurrentState == null) return;
         CurrentState.CostCenters.Add(new CostCenterBudget 
         { 
-            Name = $"New CC {CurrentState.CostCenters.Count + 1}", 
-            UserCount = 1, 
-            MeteredRemainingCredits = 100_000 
+            Name                  = $"New CC {CurrentState.CostCenters.Count + 1}", 
+            UserCount             = 1, 
+            MeteredRemainingCredits = 100_000,
+            InitialMeteredBudget  = 100_000,
         });
         StateHasChanged();
     }

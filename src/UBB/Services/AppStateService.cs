@@ -25,12 +25,14 @@ public class AppStateService
     public void SetUserType(UserType type)
     {
         FlowState.UserType = type;
+        ActivePresetKey = null; // user type change invalidates the active preset
         Notify();
     }
 
     public void SetMode(SimulationMode mode)
     {
         FlowState.Mode = mode;
+        ActivePresetKey = null; // mode change invalidates the active preset
         Notify();
     }
 

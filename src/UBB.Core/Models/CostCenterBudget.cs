@@ -11,6 +11,11 @@ public class CostCenterBudget
     public int CreditsConsumed { get; set; }
 
     /// <summary>
+    /// The budget value at creation time, used by Reset() to restore the original amount.
+    /// </summary>
+    public int InitialMeteredBudget { get; set; }
+
+    /// <summary>
     /// Per-CC node states set by the engine after simulation. Keys: pool, paid, costCentre, enterprise, result.
     /// </summary>
     public Dictionary<string, FlowNodeState> NodeStates { get; set; } = DefaultNodeStates();
@@ -46,11 +51,12 @@ public class CostCenterBudget
     }
 
     /// <summary>
-    /// Reset for next day or scenario.
+    /// Reset to the budget value captured at creation time (InitialMeteredBudget).
     /// </summary>
-    public void Reset(int initialMeteredBudget)
+    public void Reset()
     {
-        MeteredRemainingCredits = initialMeteredBudget;
+        MeteredRemainingCredits = InitialMeteredBudget;
         CreditsConsumed = 0;
+        ResetNodeStates();
     }
 }

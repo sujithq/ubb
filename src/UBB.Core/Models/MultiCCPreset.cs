@@ -27,14 +27,17 @@ public class MultiCCPreset
         {
             state.CostCenters.Add(new CostCenterBudget
             {
-                Name = name,
-                UserCount = users,
+                Name                  = name,
+                UserCount             = users,
                 MeteredRemainingCredits = budget,
-                CreditsConsumed = 0
+                InitialMeteredBudget  = budget,  // store for Reset()
+                CreditsConsumed       = 0
             });
         }
-        state.PoolRemainingCredits = PoolRemainingCredits;
-        state.EnterpriseMeteredRemainingCredits = EnterpriseMeteredRemainingCredits;
+        state.PoolRemainingCredits                     = PoolRemainingCredits;
+        state.InitialPoolRemainingCredits              = PoolRemainingCredits;
+        state.EnterpriseMeteredRemainingCredits        = EnterpriseMeteredRemainingCredits;
+        state.InitialEnterpriseMeteredRemainingCredits = EnterpriseMeteredRemainingCredits;
         state.Logs.Clear();
     }
 }

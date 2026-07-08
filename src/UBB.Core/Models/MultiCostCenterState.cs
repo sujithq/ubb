@@ -34,29 +34,35 @@ public class MultiCostCenterState
     /// <summary>
     /// Create a default multi-CC state with 3 cost centers.
     /// </summary>
+    /// <summary>Shared pool value at creation time — restored by Reset().</summary>
+    public int InitialPoolRemainingCredits { get; set; }
+
+    /// <summary>Enterprise cap value at creation time — restored by Reset().</summary>
+    public int InitialEnterpriseMeteredRemainingCredits { get; set; }
+
     public static MultiCostCenterState CreateDefault() => new()
     {
         CostCenters =
         [
-            new() { Name = "Engineering", UserCount = 10, MeteredRemainingCredits = 200_000 },
-            new() { Name = "Research", UserCount = 5, MeteredRemainingCredits = 150_000 },
-            new() { Name = "Sales", UserCount = 3, MeteredRemainingCredits = 100_000 },
+            new() { Name = "Engineering", UserCount = 10, MeteredRemainingCredits = 200_000, InitialMeteredBudget = 200_000 },
+            new() { Name = "Research",    UserCount = 5,  MeteredRemainingCredits = 150_000, InitialMeteredBudget = 150_000 },
+            new() { Name = "Sales",       UserCount = 3,  MeteredRemainingCredits = 100_000, InitialMeteredBudget = 100_000 },
         ],
-        PoolRemainingCredits = 390_000,
-        EnterpriseMeteredRemainingCredits = 1_000_000,
+        PoolRemainingCredits                      = 390_000,
+        InitialPoolRemainingCredits               = 390_000,
+        EnterpriseMeteredRemainingCredits         = 1_000_000,
+        InitialEnterpriseMeteredRemainingCredits  = 1_000_000,
     };
 
     /// <summary>
-    /// Reset all cost centers and logs.
+    /// Reset all cost centers and org-level budgets to their initial values.
     /// </summary>
     public void Reset()
     {
         foreach (var cc in CostCenters)
-        {
-            cc.Reset(200_000); // Default metered budget
-        }
-        PoolRemainingCredits = 390_000;
-        EnterpriseMeteredRemainingCredits = 1_000_000;
+            cc.Reset(); // restores each CC's InitialMeteredBudget
+        PoolRemainingCredits              = InitialPoolRemainingCredits;
+        EnterpriseMeteredRemainingCredits = InitialEnterpriseMeteredRemainingCredits;
         Logs.Clear();
     }
 
