@@ -91,66 +91,46 @@
 
         <hr />
 
-        <!-- Cost Centers Summary -->
+        <!-- Run button -->
         @if (CurrentState?.CostCenters.Count > 0)
         {
             <div class="mb-3">
-                <h6 class="fw-bold">Summary</h6>
-                <table class="table table-sm table-bordered">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Cost Center</th>
-                            <th>Users</th>
-                            <th>Metered Budget</th>
-                            <th>Consumed</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var cc in CurrentState.CostCenters)
-                        {
-                            var status = cc.MeteredRemainingCredits > 0 ? "✓" : "✗";
-                            var statusClass = cc.MeteredRemainingCredits > 0 ? "text-success" : "text-danger";
-                            <tr>
-                                <td>@cc.Name</td>
-                                <td>@cc.UserCount</td>
-                                <td>@cc.MeteredRemainingCredits.ToString("N0")</td>
-                                <td>@cc.CreditsConsumed.ToString("N0")</td>
-                                <td class="@statusClass fw-bold">@status</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+                <button type="button" class="btn btn-success w-100" @onclick="RunSimulation">
+                    ▶ Run Multi-CC Simulation
+                </button>
             </div>
 
+            <!-- Org-level status cards -->
             <div class="row mb-3">
                 <div class="col-md-6">
                     <div class="card bg-light">
-                        <div class="card-body">
-                            <div class="small text-muted">Shared Pool</div>
+                        <div class="card-body py-2">
+                            <div class="small text-muted">Shared Pool remaining</div>
                             <div class="h5 mb-0 text-primary">@CurrentState.PoolRemainingCredits.ToString("N0")</div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="card bg-light">
-                        <div class="card-body">
-                            <div class="small text-muted">Enterprise Cap</div>
+                        <div class="card-body py-2">
+                            <div class="small text-muted">Enterprise Cap remaining</div>
                             <div class="h5 mb-0 text-info">@CurrentState.EnterpriseMeteredRemainingCredits.ToString("N0")</div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Run & Simulation Log -->
-            <div class="mb-3">
-                <button type="button" class="btn btn-success w-100 mb-2" @onclick="RunSimulation">
-                    ▶ Run Multi-CC Simulation
-                </button>
-            </div>
-
+            <!-- Per-CC flow diagrams (shown after simulation) -->
             @if (CurrentState.Logs.Count > 0)
             {
+                <div class="mb-3">
+                    <h6 class="fw-bold">Cost Center Flow Diagrams</h6>
+                    @foreach (var cc in CurrentState.CostCenters)
+                    {
+                        <MultiCCFlowDiagram Cc="cc" />
+                    }
+                </div>
+
                 <div class="card bg-dark text-light">
                     <div class="card-header">
                         <h6 class="mb-0">Simulation Log</h6>

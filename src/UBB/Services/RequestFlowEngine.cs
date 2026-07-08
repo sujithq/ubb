@@ -132,6 +132,7 @@ public static class RequestFlowEngine
         
         foreach (var cc in state.CostCenters)
         {
+            cc.ResetNodeStates();
             state.AddLog($"");
             state.AddLog($"=== {cc.Name} (users: {cc.UserCount}, metered budget: {cc.MeteredRemainingCredits:N0}) ===");
 
@@ -143,6 +144,8 @@ public static class RequestFlowEngine
             {
                 state.PoolRemainingCredits -= requestCredits;
                 cc.CreditsConsumed += requestCredits;
+                cc.NodeStates["pool"]   = FlowNodeState.Pass;
+                cc.NodeStates["result"] = FlowNodeState.Pass;
                 state.AddLog($"✓ {cc.Name} drew {requestCredits:N0} from pool (pool now: {state.PoolRemainingCredits:N0})");
                 continue;
             }
@@ -153,25 +156,40 @@ public static class RequestFlowEngine
 
             if (state.PoolRemainingCredits > 0)
             {
+                cc.NodeStates["pool"] = FlowNodeState.Warn;
                 state.PoolRemainingCredits = 0;
                 state.AddLog($"✓ {cc.Name} drew {poolPart:N0} from pool (pool exhausted)");
             }
+            else
+            {
+                cc.NodeStates["pool"] = FlowNodeState.Block;
+            }
+
+            cc.NodeStates["paid"] = FlowNodeState.Warn;
 
             // Step 3: Can CC cover metered from its budget?
             var ccPay = Math.Min(meteredNeeded, cc.MeteredRemainingCredits);
             if (ccPay < meteredNeeded)
             {
+                cc.NodeStates["costCentre"] = FlowNodeState.Block;
+                cc.NodeStates["result"]     = FlowNodeState.Block;
                 state.AddLog($"✗ {cc.Name} blocked: needs {meteredNeeded:N0}, has {cc.MeteredRemainingCredits:N0}");
                 continue;
             }
 
+            cc.NodeStates["costCentre"] = FlowNodeState.Pass;
+
             // Step 4: Can enterprise cap cover?
             if (state.EnterpriseMeteredRemainingCredits < meteredNeeded)
             {
+                cc.NodeStates["enterprise"] = FlowNodeState.Block;
+                cc.NodeStates["result"]     = FlowNodeState.Block;
                 state.AddLog($"✗ {cc.Name} blocked: enterprise cap insufficient ({state.EnterpriseMeteredRemainingCredits:N0} / {meteredNeeded:N0})");
                 continue;
             }
 
+            cc.NodeStates["enterprise"] = FlowNodeState.Pass;
+            cc.NodeStates["result"]     = FlowNodeState.Warn;
             cc.ConsumeMetered(meteredNeeded);
             state.EnterpriseMeteredRemainingCredits -= meteredNeeded;
             state.AddLog($"✓ {cc.Name} drew {meteredNeeded:N0} from metered (CC: {cc.MeteredRemainingCredits:N0} | Ent: {state.EnterpriseMeteredRemainingCredits:N0})");

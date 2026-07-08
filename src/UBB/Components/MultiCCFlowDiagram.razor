@@ -1,0 +1,88 @@
+@using UBB.Models
+
+@* Compact 5-node flow diagram for a single cost center in multi-CC simulation.
+   Skips the user-level node (irrelevant at CC level); shows pool→paid→CC→enterprise→result. *@
+
+<div class="mb-2">
+    <div class="fw-semibold small mb-1">
+        @Cc.Name
+        <span class="text-muted fw-normal ms-1">(@Cc.UserCount users)</span>
+    </div>
+    <div class="row g-2">
+        <div class="col">
+            <div class="ubb-node py-2 @Cls("pool")">
+                <div class="ubb-node-title" style="font-size:.75rem;">2. Shared pool</div>
+                <div class="ubb-node-detail" style="font-size:.7rem;">@StateLabel("pool")</div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="ubb-node py-2 @Cls("paid")">
+                <div class="ubb-node-title" style="font-size:.75rem;">3. Paid mode</div>
+                <div class="ubb-node-detail" style="font-size:.7rem;">@StateLabel("paid")</div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="ubb-node py-2 @Cls("costCentre")">
+                <div class="ubb-node-title" style="font-size:.75rem;">4. CC budget</div>
+                <div class="ubb-node-detail" style="font-size:.7rem;">@Fmt(Cc.MeteredRemainingCredits) left</div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="ubb-node py-2 @Cls("enterprise")">
+                <div class="ubb-node-title" style="font-size:.75rem;">5. Enterprise cap</div>
+                <div class="ubb-node-detail" style="font-size:.7rem;">@StateLabel("enterprise")</div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="ubb-node py-2 @Cls("result")">
+                <div class="ubb-node-title" style="font-size:.75rem;">Result</div>
+                <div class="ubb-node-detail" style="font-size:.7rem;">@ResultLabel</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public CostCenterBudget Cc { get; set; } = default!;
+
+    private string Cls(string key)
+    {
+        if (!Cc.NodeStates.TryGetValue(key, out var s)) return "";
+        return s switch
+        {
+            FlowNodeState.Pass  => "is-pass",
+            FlowNodeState.Warn  => "is-warn",
+            FlowNodeState.Block => "is-block",
+            _                   => ""
+        };
+    }
+
+    private string StateLabel(string key)
+    {
+        if (!Cc.NodeStates.TryGetValue(key, out var s)) return "—";
+        return s switch
+        {
+            FlowNodeState.Pass  => "✓ Pass",
+            FlowNodeState.Warn  => "⚠ Warn",
+            FlowNodeState.Block => "✗ Block",
+            _                   => "—"
+        };
+    }
+
+    private string ResultLabel
+    {
+        get
+        {
+            if (!Cc.NodeStates.TryGetValue("result", out var s)) return "—";
+            return s switch
+            {
+                FlowNodeState.Pass  => "Pool usage",
+                FlowNodeState.Warn  => "Paid usage",
+                FlowNodeState.Block => "Blocked",
+                _                   => "—"
+            };
+        }
+    }
+
+    private static string Fmt(decimal value) => Math.Max(0, Math.Round(value)).ToString("N0");
+}

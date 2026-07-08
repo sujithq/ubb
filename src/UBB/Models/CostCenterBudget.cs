@@ -11,6 +11,22 @@ public class CostCenterBudget
     public int CreditsConsumed { get; set; }
 
     /// <summary>
+    /// Per-CC node states set by the engine after simulation. Keys: pool, paid, costCentre, enterprise, result.
+    /// </summary>
+    public Dictionary<string, FlowNodeState> NodeStates { get; set; } = DefaultNodeStates();
+
+    public static Dictionary<string, FlowNodeState> DefaultNodeStates() => new()
+    {
+        ["pool"]       = FlowNodeState.Idle,
+        ["paid"]       = FlowNodeState.Idle,
+        ["costCentre"] = FlowNodeState.Idle,
+        ["enterprise"] = FlowNodeState.Idle,
+        ["result"]     = FlowNodeState.Idle,
+    };
+
+    public void ResetNodeStates() => NodeStates = DefaultNodeStates();
+
+    /// <summary>
     /// Returns true if this cost center has metered budget remaining.
     /// </summary>
     public bool HasMeteredBudget => MeteredRemainingCredits > 0;
