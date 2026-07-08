@@ -7,6 +7,9 @@
 [Ll]ogs/
 publish/
 
+# Test output
+coverage/
+
 # User-specific
 *.rsuser
 *.suo

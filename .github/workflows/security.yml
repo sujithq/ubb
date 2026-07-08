@@ -1,0 +1,99 @@
+name: Security
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Re-run weekly even without code changes — new CVEs are published continuously
+    - cron: "0 6 * * 1"
+
+jobs:
+  vulnerable-packages:
+    name: Vulnerable NuGet packages
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Check all projects for vulnerable packages
+        run: |
+          FAIL=0
+          for proj in src/UBB/UBB.csproj src/UBB.Core/UBB.Core.csproj tests/UBB.Tests/UBB.Tests.csproj; do
+            echo "── $proj ──"
+            OUTPUT=$(dotnet list "$proj" package --vulnerable 2>&1)
+            echo "$OUTPUT"
+            if echo "$OUTPUT" | grep -q "has the following vulnerable"; then
+              echo "❌ Vulnerable packages found in $proj"
+              FAIL=1
+            fi
+          done
+          exit $FAIL
+
+  static-analysis:
+    name: .NET static analysis (Roslyn analyzers)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Build with all analyzers enabled
+        # EnableNETAnalyzers + AnalysisLevel=latest surfaces security rules (CA2100, CA5350, etc.)
+        run: |
+          dotnet build --configuration Release \
+            /p:EnableNETAnalyzers=true \
+            /p:AnalysisLevel=latest \
+            /p:TreatWarningsAsErrors=true
+
+  csp-sri-audit:
+    name: CDN integrity (SRI) check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify Bootstrap CDN links have integrity attributes
+        run: |
+          FAIL=0
+          for file in src/UBB/wwwroot/index.html src/UBB/wwwroot/404.html; do
+            echo "── $file ──"
+            # Every external <script> and <link rel=stylesheet> must have an integrity attribute
+            MISSING=$(grep -E '<(script|link)[^>]+(cdn\.|jsdelivr\.|unpkg\.)[^>]+>' "$file" \
+                      | grep -v 'integrity=')
+            if [ -n "$MISSING" ]; then
+              echo "❌ Missing SRI integrity attribute:"
+              echo "$MISSING"
+              FAIL=1
+            else
+              echo "✅ All CDN resources have SRI hashes"
+            fi
+          done
+          exit $FAIL
+
+  secret-scan:
+    name: Secret scan (hardcoded credentials)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history for gitleaks
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

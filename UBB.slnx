@@ -1,5 +1,9 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/UBB.Core/UBB.Core.csproj" />
     <Project Path="src/UBB/UBB.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/UBB.Tests/UBB.Tests.csproj" />
   </Folder>
 </Solution>

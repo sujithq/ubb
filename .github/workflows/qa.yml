@@ -1,0 +1,72 @@
+name: QA
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    name: Build · Test · Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build (zero warnings = zero tolerance)
+        run: dotnet build --no-restore --configuration Release -warnaserror
+
+      - name: Test with coverage
+        run: |
+          dotnet test tests/UBB.Tests/UBB.Tests.csproj \
+            --no-build --configuration Release \
+            --collect:"XPlat Code Coverage" \
+            --results-directory coverage \
+            --logger "trx;LogFileName=results.trx"
+
+      - name: Install ReportGenerator
+        run: dotnet tool install -g dotnet-reportgenerator-globaltool
+
+      - name: Generate coverage report
+        run: |
+          reportgenerator \
+            -reports:"coverage/**/coverage.cobertura.xml" \
+            -targetdir:"coverage/report" \
+            -reporttypes:"TextSummary;Cobertura" \
+            -assemblyfilters:"+UBB.Core"
+
+      - name: Print coverage summary
+        run: cat coverage/report/Summary.txt
+
+      - name: Enforce line coverage threshold (80%)
+        run: |
+          LINE=$(grep -oP '(?<=Line coverage: )\d+' coverage/report/Summary.txt || echo 0)
+          echo "Line coverage: ${LINE}%"
+          if [ "$LINE" -lt 80 ]; then
+            echo "❌ Coverage ${LINE}% is below the 80% threshold."
+            exit 1
+          fi
+          echo "✅ Coverage ${LINE}% meets the 80% threshold."
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/report/
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: coverage/results.trx
