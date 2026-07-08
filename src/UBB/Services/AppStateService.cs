@@ -14,12 +14,43 @@ public class AppStateService
 
     public event Action? OnChange;
 
-    private void Notify() => OnChange?.Invoke();
+    public void Notify()
+    {
+        Console.WriteLine($"[AppState.Notify] Triggering OnChange for {OnChange?.GetInvocationList().Length ?? 0} subscribers");
+        OnChange?.Invoke();
+    }
 
     public void Reset()
     {
         FlowState = new RequestFlowState();
         ActivePresetKey = null;
+        Notify();
+    }
+
+    public void LoadFlowState(RequestFlowState state)
+    {
+        if (state != null)
+        {
+            FlowState = state;
+            ActivePresetKey = null;
+            Notify();
+        }
+    }
+
+    public void LoadFlowStateWithoutNotifying(RequestFlowState state)
+    {
+        if (state != null)
+        {
+            FlowState = state;
+            ActivePresetKey = null;
+            // Don't notify - used during initial load to avoid double render
+        }
+    }
+
+    public void UpdateField(Action<RequestFlowState> updater)
+    {
+        updater?.Invoke(FlowState);
+        ClearActivePreset();
         Notify();
     }
 
@@ -55,6 +86,7 @@ public class AppStateService
 
     public void RunSingle()
     {
+        Console.WriteLine($"[AppState.RunSingle] FlowState hash: {FlowState.GetHashCode()}, UserUsedCredits: {FlowState.UserUsedCredits}");
         var result = RequestFlowEngine.EvaluateStep(
             "Single request",
             FlowState.SingleRequestCredits,
@@ -65,6 +97,7 @@ public class AppStateService
             FlowState.EnterpriseMeteredRemainingCredits);
 
         ApplyResult(result);
+        Console.WriteLine($"[AppState.RunSingle] After apply - UserUsedCredits: {FlowState.UserUsedCredits}, calling Notify()");
         Notify();
     }
 

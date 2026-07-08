@@ -42,6 +42,9 @@
                     });
                 });
             },
+            getHash: function () {
+                return window.location.hash;
+            },
             showToast: function (message) {
                 const toastContainer = document.getElementById('toast-container') || (() => {
                     const container = document.createElement('div');

@@ -221,38 +221,68 @@
 </div>
 
 @code {
+    private bool _stateLoaded = false;
+
     protected override void OnInitialized()
     {
         State.OnChange += StateHasChanged;
-        
-        // Load state from URL if present
-        var loadedState = UrlService.LoadFlowStateFromUrl(Nav);
-        if (loadedState != null)
-        {
-            State.FlowState.UniversalLimitCredits = loadedState.UniversalLimitCredits;
-            State.FlowState.IndividualLimitCredits = loadedState.IndividualLimitCredits;
-            State.FlowState.UserType = loadedState.UserType;
-            State.FlowState.SingleRequestCredits = loadedState.SingleRequestCredits;
-            State.FlowState.UserUsedCredits = loadedState.UserUsedCredits;
-            State.FlowState.PoolRemainingCredits = loadedState.PoolRemainingCredits;
-            State.FlowState.CostCenterMeteredRemainingCredits = loadedState.CostCenterMeteredRemainingCredits;
-            State.FlowState.EnterpriseMeteredRemainingCredits = loadedState.EnterpriseMeteredRemainingCredits;
-            State.FlowState.Mode = loadedState.Mode;
-            State.FlowState.Steps = loadedState.Steps;
-        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await JS.InvokeVoidAsync("ubb.initPopovers");
+        if (firstRender && !_stateLoaded)
+        {
+            _stateLoaded = true;
+            
+            try
+            {
+                // Get hash from JavaScript using helper function
+                var hash = await JS.InvokeAsync<string>("ubb.getHash");
+                if (!string.IsNullOrEmpty(hash) && hash.StartsWith("#"))
+                {
+                    var encoded = hash[1..]; // Remove leading #
+                    if (!string.IsNullOrEmpty(encoded))
+                    {
+                        var loadedState = UrlService.DeserializeFlowState(encoded);
+                        if (loadedState != null)
+                        {
+                            // DEBUG: Log deserialized state
+                            Console.WriteLine($"[Load] Deserialized ULB: {loadedState.UniversalLimitCredits}");
+                            Console.WriteLine($"[Load] Deserialized UserUsedCredits: {loadedState.UserUsedCredits}");
+                            
+                            // Load state without triggering notification during first render
+                            State.LoadFlowStateWithoutNotifying(loadedState);
+                            // Manually trigger re-render after state is loaded
+                            await Task.Delay(10);
+                            StateHasChanged();
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[Home] Failed to load state from URL: {ex.Message}");
+            }
+            
+            await JS.InvokeVoidAsync("ubb.initPopovers");
+        }
     }
 
     public void Dispose() => State.OnChange -= StateHasChanged;
 
     private async Task ShareSimulation()
     {
+        // DEBUG: Log current state before serialization
+        Console.WriteLine($"[Share] State.FlowState hash: {State.FlowState.GetHashCode()}");
+        Console.WriteLine($"[Share] Current ULB: {State.FlowState.UniversalLimitCredits}");
+        Console.WriteLine($"[Share] Current UserUsedCredits: {State.FlowState.UserUsedCredits}");
+        Console.WriteLine($"[Share] Current PoolRemaining: {State.FlowState.PoolRemainingCredits}");
+        
+        var encoded = UrlService.SerializeFlowState(State.FlowState);
+        var baseUri = Nav.Uri.Split('#')[0]; // Remove any existing hash
+        var shareUrl = $"{baseUri}#{encoded}";
+        
         UrlService.PushFlowStateToUrl(Nav, State.FlowState);
-        var shareUrl = Nav.Uri;
         
         // Copy to clipboard
         try
@@ -268,8 +298,10 @@
 
     private void Run()
     {
+        Console.WriteLine($"[Run] Before: UserUsedCredits = {State.FlowState.UserUsedCredits}, PoolRemaining = {State.FlowState.PoolRemainingCredits}");
         if (State.FlowState.Mode == SimulationMode.Single) State.RunSingle();
         else State.RunAgentic();
+        Console.WriteLine($"[Run] After: UserUsedCredits = {State.FlowState.UserUsedCredits}, PoolRemaining = {State.FlowState.PoolRemainingCredits}");
     }
 
     private void OnStepChanged((string Id, decimal Credits) change) =>
@@ -281,6 +313,7 @@
         {
             setter(Math.Max(0, v));
             State.ClearActivePreset();
+            State.Notify();  // Explicitly notify all subscribers
         }
     }
 
