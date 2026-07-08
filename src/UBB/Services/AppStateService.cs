@@ -10,7 +10,7 @@ public class AppStateService
     public MultiCostCenterState? MultiCCState { get; private set; }
 
     /// <summary>Key of the last applied preset, null if manually edited since.</summary>
-    public string? ActivePresetKey { get; private set; }
+    public string? ActivePresetKey { get; set; }
 
     public event Action? OnChange;
 

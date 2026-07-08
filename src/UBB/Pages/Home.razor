@@ -11,7 +11,7 @@
     <div class="col-lg-12">
         <section class="ubb-hero mb-4">
             <p class="ubb-kicker mb-2">GitHub Copilot UBB governance simulator</p>
-            <h1 class="mb-3">Interactive AI Credits Flow</h1>
+            <h1 class="mb-3"><a href="/" class="text-decoration-none">Interactive AI Credits Flow</a></h1>
             <p class="ubb-hero-text mb-4">
                 Explore how requests are evaluated through user-level controls, shared credits, and metered guardrails.
                 Use single-request and multi-step agentic flows to demonstrate where requests pass, warn, or stop.
@@ -243,15 +243,20 @@
                     var encoded = hash[1..]; // Remove leading #
                     if (!string.IsNullOrEmpty(encoded))
                     {
-                        var loadedState = UrlService.DeserializeFlowState(encoded);
+                        var (loadedState, presetKey) = UrlService.DeserializeFlowState(encoded);
                         if (loadedState != null)
                         {
                             // DEBUG: Log deserialized state
                             Console.WriteLine($"[Load] Deserialized ULB: {loadedState.UniversalLimitCredits}");
                             Console.WriteLine($"[Load] Deserialized UserUsedCredits: {loadedState.UserUsedCredits}");
+                            Console.WriteLine($"[Load] Deserialized Preset: {presetKey ?? "(none)"}");
                             
                             // Load state without triggering notification during first render
                             State.LoadFlowStateWithoutNotifying(loadedState);
+                            if (!string.IsNullOrEmpty(presetKey))
+                            {
+                                State.ActivePresetKey = presetKey;
+                            }
                             // Manually trigger re-render after state is loaded
                             await Task.Delay(10);
                             StateHasChanged();
@@ -277,12 +282,13 @@
         Console.WriteLine($"[Share] Current ULB: {State.FlowState.UniversalLimitCredits}");
         Console.WriteLine($"[Share] Current UserUsedCredits: {State.FlowState.UserUsedCredits}");
         Console.WriteLine($"[Share] Current PoolRemaining: {State.FlowState.PoolRemainingCredits}");
+        Console.WriteLine($"[Share] Active Preset: {State.ActivePresetKey ?? "(none)"}");
         
-        var encoded = UrlService.SerializeFlowState(State.FlowState);
+        var encoded = UrlService.SerializeFlowState(State.FlowState, State.ActivePresetKey);
         var baseUri = Nav.Uri.Split('#')[0]; // Remove any existing hash
         var shareUrl = $"{baseUri}#{encoded}";
         
-        UrlService.PushFlowStateToUrl(Nav, State.FlowState);
+        UrlService.PushFlowStateToUrl(Nav, State.FlowState, State.ActivePresetKey);
         
         // Copy to clipboard
         try
