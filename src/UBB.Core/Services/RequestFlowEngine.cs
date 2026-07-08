@@ -125,10 +125,10 @@ public static class RequestFlowEngine
     /// </summary>
     public static void RunMultiCostCenter(MultiCostCenterState state)
     {
-        state.Logs.Clear();
-        state.AddLog("Multi-cost-center simulation started.");
-        state.AddLog($"Shared pool: {state.PoolRemainingCredits:N0} | Enterprise cap: {state.EnterpriseMeteredRemainingCredits:N0}");
-        state.AddLog($"Request size per CC: {state.RequestCreditsPerCC:N0} credits");
+        // Add separator to distinguish runs (don't clear previous logs — accumulate them)
+        if (state.Logs.Count > 0)
+            state.AddLog("─────────────────────────────────────────────────────────");
+        state.AddLog($"[Run #{state.Logs.Count / 10 + 1}] Shared pool: {state.PoolRemainingCredits:N0} | Enterprise cap: {state.EnterpriseMeteredRemainingCredits:N0} | Request size: {state.RequestCreditsPerCC:N0}");
         
         foreach (var cc in state.CostCenters)
         {

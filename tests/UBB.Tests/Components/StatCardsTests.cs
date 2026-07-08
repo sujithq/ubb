@@ -105,4 +105,101 @@ public class StatCardsTests : TestContext
         // The raw negative number must not appear anywhere in the rendered output
         cut.Markup.Should().NotContain("-100");
     }
+
+    // ── TD-01: Multi-CC mode rendering ────────────────────────────────────────
+
+    [Fact]
+    public void StatCards_WhenMultiCCState_RendersFourMultiCCCards()
+    {
+        var state = DefaultState();
+        var multiCC = MultiCostCenterState.CreateDefault();
+        var cut = RenderComponent<StatCards>(p =>
+        {
+            p.Add(x => x.FlowState, state);
+            p.Add(x => x.MultiCCState, multiCC);
+        });
+
+        cut.FindAll(".ubb-stat-card").Count.Should().Be(4);
+    }
+
+    [Fact]
+    public void StatCards_WhenMultiCCState_DisplaysPoolFromMultiCC()
+    {
+        var state = DefaultState();
+        var multiCC = MultiCostCenterState.CreateDefault();
+        multiCC.PoolRemainingCredits = 555_000;
+
+        var cut = RenderComponent<StatCards>(p =>
+        {
+            p.Add(x => x.FlowState, state);
+            p.Add(x => x.MultiCCState, multiCC);
+        });
+
+        var values = cut.FindAll(".ubb-stat-value").Select(e => e.TextContent).ToList();
+        values.Should().Contain(Fmt(555_000));
+        // Should NOT show single-user pool value
+        values.Should().NotContain(Fmt(388_500));
+    }
+
+    [Fact]
+    public void StatCards_WhenMultiCCState_DisplaysEnterpriseCapFromMultiCC()
+    {
+        var state = DefaultState();
+        var multiCC = MultiCostCenterState.CreateDefault();
+        multiCC.EnterpriseMeteredRemainingCredits = 2_500_000;
+
+        var cut = RenderComponent<StatCards>(p =>
+        {
+            p.Add(x => x.FlowState, state);
+            p.Add(x => x.MultiCCState, multiCC);
+        });
+
+        var values = cut.FindAll(".ubb-stat-value").Select(e => e.TextContent).ToList();
+        values.Should().Contain(Fmt(2_500_000));
+    }
+
+    [Fact]
+    public void StatCards_WhenMultiCCState_DisplaysCostCenterCount()
+    {
+        var state = DefaultState();
+        var multiCC = MultiCostCenterState.CreateDefault();
+        // CreateDefault has 3 cost centers (Engineering, Research, Sales)
+
+        var cut = RenderComponent<StatCards>(p =>
+        {
+            p.Add(x => x.FlowState, state);
+            p.Add(x => x.MultiCCState, multiCC);
+        });
+
+        var values = cut.FindAll(".ubb-stat-value").Select(e => e.TextContent).ToList();
+        values.Should().Contain("3");
+    }
+
+    [Fact]
+    public void StatCards_WhenMultiCCState_DisplaysRequestCreditsPerCC()
+    {
+        var state = DefaultState();
+        var multiCC = MultiCostCenterState.CreateDefault();
+        multiCC.RequestCreditsPerCC = 5_000;
+
+        var cut = RenderComponent<StatCards>(p =>
+        {
+            p.Add(x => x.FlowState, state);
+            p.Add(x => x.MultiCCState, multiCC);
+        });
+
+        var values = cut.FindAll(".ubb-stat-value").Select(e => e.TextContent).ToList();
+        values.Should().Contain(Fmt(5_000));
+    }
+
+    [Fact]
+    public void StatCards_WhenMultiCCStateNull_RendersSingleUserCards()
+    {
+        var state = DefaultState();
+        var cut = RenderComponent<StatCards>(p => p.Add(x => x.FlowState, state));
+
+        // Should render single-user labels, not multi-CC labels
+        cut.Markup.Should().Contain("User used");
+        cut.Markup.Should().NotContain("Multi-CC");
+    }
 }

@@ -170,6 +170,8 @@
 </div>
 
 @code {
+    [Inject] private AppStateService AppStateService { get; set; } = default!;
+
     private MultiCostCenterState? CurrentState;
     private string? _activePresetKey;
 
@@ -249,8 +251,7 @@
     private void RunSimulation()
     {
         if (CurrentState == null) return;
-        CurrentState.Logs.Clear(); // Clear previous logs
-        RequestFlowEngine.RunMultiCostCenter(CurrentState);
+        AppStateService.RunMultiCostCenter(CurrentState);
         StateHasChanged();
     }
 }

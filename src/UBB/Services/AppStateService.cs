@@ -6,6 +6,9 @@ public class AppStateService
 {
     public RequestFlowState FlowState { get; private set; } = new();
 
+    /// <summary>Multi-cost-center simulation state, null if in single-user mode.</summary>
+    public MultiCostCenterState? MultiCCState { get; private set; }
+
     /// <summary>Key of the last applied preset, null if manually edited since.</summary>
     public string? ActivePresetKey { get; private set; }
 
@@ -76,6 +79,15 @@ public class AppStateService
         FlowState.EnterpriseMeteredRemainingCredits = entRemaining;
         FlowState.Logs = logs;
         FlowState.NodeStates = nodeStates;
+        Notify();
+    }
+
+    public void RunMultiCostCenter(MultiCostCenterState state)
+    {
+        if (state == null) return;
+        MultiCCState = state;
+        // Don't clear logs — let them accumulate across runs so users see the progression
+        RequestFlowEngine.RunMultiCostCenter(state);
         Notify();
     }
 

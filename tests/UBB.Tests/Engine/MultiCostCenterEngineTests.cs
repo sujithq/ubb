@@ -226,7 +226,7 @@ public class MultiCostCenterEngineTests
     // ── Logs ─────────────────────────────────────────────────────────────────
 
     [Fact]
-    public void Logs_ClearedAndRepopulated_OnEachRun()
+    public void Logs_AccumulatedAcrossRuns()
     {
         var state = BuildState(requestCreditsPerCC: 2_000, poolRemaining: 390_000, enterpriseRemaining: 1_000_000,
             ("Eng", 10, 200_000));
@@ -235,6 +235,7 @@ public class MultiCostCenterEngineTests
         var countAfterFirst = state.Logs.Count;
 
         RequestFlowEngine.RunMultiCostCenter(state);
-        state.Logs.Count.Should().Be(countAfterFirst); // same shape, not doubled
+        // Logs should accumulate, not reset to same count
+        state.Logs.Count.Should().BeGreaterThan(countAfterFirst);
     }
 }

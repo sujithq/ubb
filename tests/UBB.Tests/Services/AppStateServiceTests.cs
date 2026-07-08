@@ -155,4 +155,73 @@ public class AppStateServiceTests
 
         fired.Should().BeTrue();
     }
+
+    // ── TD-01: RunMultiCostCenter routes through service ──────────────────────
+
+    [Fact]
+    public void RunMultiCostCenter_StoresStateInProperty()
+    {
+        var svc = new AppStateService();
+        var state = MultiCostCenterState.CreateDefault();
+
+        svc.RunMultiCostCenter(state);
+
+        svc.MultiCCState.Should().NotBeNull();
+        svc.MultiCCState.Should().Be(state);
+    }
+
+    [Fact]
+    public void RunMultiCostCenter_AccumulatesLogs()
+    {
+        var svc = new AppStateService();
+        var state = MultiCostCenterState.CreateDefault();
+        state.Logs.Add("old log");
+
+        svc.RunMultiCostCenter(state);
+
+        // Logs should accumulate, not be cleared — old log should still be there
+        state.Logs.Should().Contain("old log");
+        // Plus new logs from this run
+        state.Logs.Count.Should().BeGreaterThan(1);
+    }
+
+    [Fact]
+    public void RunMultiCostCenter_ExecutesSimulation()
+    {
+        var svc = new AppStateService();
+        var state = MultiCostCenterState.CreateDefault();
+
+        svc.RunMultiCostCenter(state);
+
+        // After execution, logs should be populated
+        state.Logs.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public void RunMultiCostCenter_FiresOnChange()
+    {
+        var svc = new AppStateService();
+        var state = MultiCostCenterState.CreateDefault();
+        var fired = false;
+        svc.OnChange += () => fired = true;
+
+        svc.RunMultiCostCenter(state);
+
+        fired.Should().BeTrue();
+    }
+
+    [Fact]
+    public void RunMultiCostCenter_WithNullState_ReturnsEarly()
+    {
+        var svc = new AppStateService();
+        var fired = false;
+        svc.OnChange += () => fired = true;
+
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type
+        svc.RunMultiCostCenter(null);
+#pragma warning restore CS8625
+
+        svc.MultiCCState.Should().BeNull();
+        fired.Should().BeFalse("because null state should return early without notification");
+    }
 }

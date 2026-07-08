@@ -1,32 +1,65 @@
 <div class="row g-3">
-    <div class="col-6 col-lg-3">
-        <div class="ubb-stat-card">
-            <div class="ubb-stat-label">User used <InfoTip Text="Total AI credits consumed by this user so far. User-level budgets apply across both pool and metered phases." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/budgets-for-usage-based-billing#user-level-budget" /></div>
-            <div class="ubb-stat-value">@Fmt(FlowState.UserUsedCredits)</div>
+    @if (MultiCCState != null)
+    {
+        <!-- Multi-CC mode: show pool and enterprise cap -->
+        <div class="col-6 col-lg-3">
+            <div class="ubb-stat-card">
+                <div class="ubb-stat-label">Pool (Multi-CC)</div>
+                <div class="ubb-stat-value">@Fmt(MultiCCState.PoolRemainingCredits)</div>
+            </div>
         </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="ubb-stat-card">
-            <div class="ubb-stat-label">Pool <InfoTip Text="Remaining included AI credits in the shared enterprise pool. All seats contribute credits here each month. Requests draw from the pool first — no metered charge applies." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/usage-based-billing-for-organizations-and-enterprises#how-do-ai-credits-work" /></div>
-            <div class="ubb-stat-value">@Fmt(FlowState.PoolRemainingCredits)</div>
+        <div class="col-6 col-lg-3">
+            <div class="ubb-stat-card">
+                <div class="ubb-stat-label">Enterprise cap (Multi-CC)</div>
+                <div class="ubb-stat-value">@Fmt(MultiCCState.EnterpriseMeteredRemainingCredits)</div>
+            </div>
         </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="ubb-stat-card">
-            <div class="ubb-stat-label">Cost centre <InfoTip Text="Remaining metered budget for this cost centre. Only active after the shared pool is exhausted. When depleted (and Stop usage is on), only users in this cost centre are blocked." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/budgets-for-usage-based-billing#cost-center-budget" /></div>
-            <div class="ubb-stat-value">@Fmt(FlowState.CostCenterMeteredRemainingCredits)</div>
+        <div class="col-6 col-lg-3">
+            <div class="ubb-stat-card">
+                <div class="ubb-stat-label">Cost centers</div>
+                <div class="ubb-stat-value">@MultiCCState.CostCenters.Count</div>
+            </div>
         </div>
-    </div>
-    <div class="col-6 col-lg-3">
-        <div class="ubb-stat-card">
-            <div class="ubb-stat-label">Enterprise cap <InfoTip Text="Remaining enterprise-wide metered budget. Only active after pool exhaustion. This caps metered charges only — total bill = license fees + metered charges." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/budgets-for-usage-based-billing#enterprise-budget" /></div>
-            <div class="ubb-stat-value">@Fmt(FlowState.EnterpriseMeteredRemainingCredits)</div>
+        <div class="col-6 col-lg-3">
+            <div class="ubb-stat-card">
+                <div class="ubb-stat-label">Requests/CC</div>
+                <div class="ubb-stat-value">@Fmt(MultiCCState.RequestCreditsPerCC)</div>
+            </div>
         </div>
-    </div>
+    }
+    else
+    {
+        <!-- Single-user mode: show traditional stats -->
+        <div class="col-6 col-lg-3">
+            <div class="ubb-stat-card">
+                <div class="ubb-stat-label">User used <InfoTip Text="Total AI credits consumed by this user so far. User-level budgets apply across both pool and metered phases." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/budgets-for-usage-based-billing#user-level-budget" /></div>
+                <div class="ubb-stat-value">@Fmt(FlowState.UserUsedCredits)</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="ubb-stat-card">
+                <div class="ubb-stat-label">Pool <InfoTip Text="Remaining included AI credits in the shared enterprise pool. All seats contribute credits here each month. Requests draw from the pool first — no metered charge applies." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/usage-based-billing-for-organizations-and-enterprises#how-do-ai-credits-work" /></div>
+                <div class="ubb-stat-value">@Fmt(FlowState.PoolRemainingCredits)</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="ubb-stat-card">
+                <div class="ubb-stat-label">Cost centre <InfoTip Text="Remaining metered budget for this cost centre. Only active after the shared pool is exhausted. When depleted (and Stop usage is on), only users in this cost centre are blocked." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/budgets-for-usage-based-billing#cost-center-budget" /></div>
+                <div class="ubb-stat-value">@Fmt(FlowState.CostCenterMeteredRemainingCredits)</div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="ubb-stat-card">
+                <div class="ubb-stat-label">Enterprise cap <InfoTip Text="Remaining enterprise-wide metered budget. Only active after pool exhaustion. This caps metered charges only — total bill = license fees + metered charges." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/budgets-for-usage-based-billing#enterprise-budget" /></div>
+                <div class="ubb-stat-value">@Fmt(FlowState.EnterpriseMeteredRemainingCredits)</div>
+            </div>
+        </div>
+    }
 </div>
 
 @code {
-    [Parameter] public RequestFlowState FlowState { get; set; } = new();
+    [Parameter, EditorRequired] public RequestFlowState FlowState { get; set; } = new();
+    [Parameter] public MultiCostCenterState? MultiCCState { get; set; }
 
     private static string Fmt(decimal value) => Math.Max(0, Math.Round(value)).ToString("N0");
 }
