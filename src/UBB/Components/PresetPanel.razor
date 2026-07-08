@@ -2,8 +2,9 @@
     @foreach (var preset in ScenarioPresets.RequestPresets)
     {
         var p = preset;
-        <button type="button" class="ubb-preset-btn" @onclick="() => OnPresetSelected.InvokeAsync(p)">
-            <div class="ubb-preset-title">@p.Label</div>
+        var isActive = p.Key == ActivePresetKey;
+        <button type="button" class="ubb-preset-btn @(isActive ? "ubb-preset-btn--active" : "")" @onclick="() => OnPresetSelected.InvokeAsync(p)">
+            <div class="ubb-preset-title">@(isActive ? "✓ " : "")@p.Label</div>
             <div class="ubb-preset-description">@p.Description</div>
         </button>
     }
@@ -11,4 +12,5 @@
 
 @code {
     [Parameter] public EventCallback<RequestPreset> OnPresetSelected { get; set; }
+    [Parameter] public string? ActivePresetKey { get; set; }
 }

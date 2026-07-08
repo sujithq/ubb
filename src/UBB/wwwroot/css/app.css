@@ -157,6 +157,11 @@
     border-color: #0d6efd;
     background: #e7f1ff;
 }
+.ubb-preset-btn--active {
+    border-color: #0d6efd;
+    background: #e7f1ff;
+}
+.ubb-preset-btn--active .ubb-preset-title { color: #0d6efd; }
 .ubb-preset-title { font-weight: 600; font-size: .875rem; }
 .ubb-preset-description { font-size: .8125rem; color: var(--bs-secondary-color, #6c757d); margin-top: .125rem; }
 

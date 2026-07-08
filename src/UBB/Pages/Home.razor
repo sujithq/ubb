@@ -184,6 +184,17 @@
                     <div class="card ubb-card h-100">
                         <div class="card-body">
                             <h2 class="ubb-card-title">Execution log</h2>
+                            @if (State.ActivePresetKey != null)
+                            {
+                                var activePreset = ScenarioPresets.RequestPresets.FirstOrDefault(p => p.Key == State.ActivePresetKey);
+                                @if (activePreset != null)
+                                {
+                                    <div class="alert alert-info py-2 mb-3">
+                                        <span class="fw-semibold">Preset:</span> @activePreset.Label
+                                        <span class="text-muted ms-2 small">— @activePreset.Description</span>
+                                    </div>
+                                }
+                            }
                             <ExecutionLog Logs="State.FlowState.Logs" />
                         </div>
                     </div>
@@ -192,7 +203,7 @@
                     <div class="card ubb-card h-100">
                         <div class="card-body">
                             <h2 class="ubb-card-title">Scenario presets</h2>
-                            <PresetPanel OnPresetSelected="State.ApplyPreset" />
+                            <PresetPanel OnPresetSelected="State.ApplyPreset" ActivePresetKey="State.ActivePresetKey" />
                         </div>
                     </div>
                 </div>
@@ -224,7 +235,10 @@
     private void SetField(ChangeEventArgs e, Action<decimal> setter)
     {
         if (decimal.TryParse(e.Value?.ToString(), out var v))
+        {
             setter(Math.Max(0, v));
+            State.ClearActivePreset();
+        }
     }
 
     private string BtnClass(UserType t) =>

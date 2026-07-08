@@ -12,10 +12,11 @@
             <div class="d-grid gap-2">
                 @foreach (var preset in ScenarioPresets.MultiCCPresets)
                 {
-                    <button type="button" class="btn btn-outline-info text-start" 
+                    var isActive = preset.Key == _activePresetKey;
+                    <button type="button" class="btn @(isActive ? "btn-info" : "btn-outline-info") text-start" 
                             @onclick="() => SelectPreset(preset)">
-                        <div class="fw-bold">@preset.Label</div>
-                        <div class="small text-muted">@preset.Description</div>
+                        <div class="fw-bold">@(isActive ? "✓ " : "")@preset.Label</div>
+                        <div class="small @(isActive ? "text-white" : "text-muted")">@preset.Description</div>
                     </button>
                 }
             </div>
@@ -123,6 +124,23 @@
             <!-- Per-CC flow diagrams (shown after simulation) -->
             @if (CurrentState.Logs.Count > 0)
             {
+                @if (_activePresetKey != null)
+                {
+                    var activePreset = ScenarioPresets.MultiCCPresets.FirstOrDefault(p => p.Key == _activePresetKey);
+                    @if (activePreset != null)
+                    {
+                        <div class="alert alert-info py-2 mb-3">
+                            <span class="fw-semibold">Preset:</span> @activePreset.Label
+                            <span class="text-muted ms-2 small">— @activePreset.Description</span>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="alert alert-secondary py-2 mb-3">
+                        <span class="fw-semibold">Manual configuration</span>
+                    </div>
+                }
                 <div class="mb-3">
                     <h6 class="fw-bold">Cost Center Flow Diagrams</h6>
                     @foreach (var cc in CurrentState.CostCenters)
@@ -153,11 +171,13 @@
 
 @code {
     private MultiCostCenterState? CurrentState;
+    private string? _activePresetKey;
 
     private void SelectPreset(MultiCCPreset preset)
     {
         CurrentState = MultiCostCenterState.CreateDefault();
         preset.ApplyTo(CurrentState);
+        _activePresetKey = preset.Key;
         StateHasChanged();
     }
 
@@ -166,6 +186,7 @@
         if (CurrentState == null) return;
         if (int.TryParse(e.Value?.ToString() ?? "0", out var v))
             CurrentState.PoolRemainingCredits = v;
+        _activePresetKey = null; // manual edit clears preset label
     }
 
     private void UpdateEnterprise(ChangeEventArgs e)

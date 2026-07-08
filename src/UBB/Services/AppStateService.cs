@@ -6,6 +6,9 @@ public class AppStateService
 {
     public RequestFlowState FlowState { get; private set; } = new();
 
+    /// <summary>Key of the last applied preset, null if manually edited since.</summary>
+    public string? ActivePresetKey { get; private set; }
+
     public event Action? OnChange;
 
     private void Notify() => OnChange?.Invoke();
@@ -13,8 +16,11 @@ public class AppStateService
     public void Reset()
     {
         FlowState = new RequestFlowState();
+        ActivePresetKey = null;
         Notify();
     }
+
+    public void ClearActivePreset() => ActivePresetKey = null;
 
     public void SetUserType(UserType type)
     {
@@ -30,6 +36,7 @@ public class AppStateService
 
     public void ApplyPreset(RequestPreset preset)
     {
+        ActivePresetKey = preset.Key;
         FlowState.UserType = preset.UserType;
         FlowState.SingleRequestCredits = preset.SingleRequestCredits;
         FlowState.PoolRemainingCredits = preset.PoolRemainingCredits;
