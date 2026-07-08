@@ -1,6 +1,8 @@
 ﻿@page "/"
 @inject AppStateService State
 @inject IJSRuntime JS
+@inject NavigationManager Nav
+@inject UrlStateService UrlService
 @implements IDisposable
 
 <PageTitle>GitHub Copilot UBB Simulator</PageTitle>
@@ -14,7 +16,12 @@
                 Explore how requests are evaluated through user-level controls, shared credits, and metered guardrails.
                 Use single-request and multi-step agentic flows to demonstrate where requests pass, warn, or stop.
             </p>
-            <StatCards FlowState="State.FlowState" MultiCCState="State.MultiCCState" />
+            <div class="d-flex gap-2 mb-3">
+                <StatCards FlowState="State.FlowState" MultiCCState="State.MultiCCState" />
+                <button class="btn btn-outline-secondary ms-auto" type="button" @onclick="ShareSimulation" title="Share current simulation state">
+                    🔗 Share
+                </button>
+            </div>
         </section>
     </div>
 </div>
@@ -214,7 +221,26 @@
 </div>
 
 @code {
-    protected override void OnInitialized() => State.OnChange += StateHasChanged;
+    protected override void OnInitialized()
+    {
+        State.OnChange += StateHasChanged;
+        
+        // Load state from URL if present
+        var loadedState = UrlService.LoadFlowStateFromUrl(Nav);
+        if (loadedState != null)
+        {
+            State.FlowState.UniversalLimitCredits = loadedState.UniversalLimitCredits;
+            State.FlowState.IndividualLimitCredits = loadedState.IndividualLimitCredits;
+            State.FlowState.UserType = loadedState.UserType;
+            State.FlowState.SingleRequestCredits = loadedState.SingleRequestCredits;
+            State.FlowState.UserUsedCredits = loadedState.UserUsedCredits;
+            State.FlowState.PoolRemainingCredits = loadedState.PoolRemainingCredits;
+            State.FlowState.CostCenterMeteredRemainingCredits = loadedState.CostCenterMeteredRemainingCredits;
+            State.FlowState.EnterpriseMeteredRemainingCredits = loadedState.EnterpriseMeteredRemainingCredits;
+            State.FlowState.Mode = loadedState.Mode;
+            State.FlowState.Steps = loadedState.Steps;
+        }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -222,6 +248,23 @@
     }
 
     public void Dispose() => State.OnChange -= StateHasChanged;
+
+    private async Task ShareSimulation()
+    {
+        UrlService.PushFlowStateToUrl(Nav, State.FlowState);
+        var shareUrl = Nav.Uri;
+        
+        // Copy to clipboard
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", shareUrl);
+            await JS.InvokeVoidAsync("ubb.showToast", "Share link copied to clipboard!");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to copy to clipboard: {ex.Message}");
+        }
+    }
 
     private void Run()
     {

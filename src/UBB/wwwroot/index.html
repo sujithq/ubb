@@ -41,6 +41,30 @@
                         delay: { show: 100, hide: 600 }
                     });
                 });
+            },
+            showToast: function (message) {
+                const toastContainer = document.getElementById('toast-container') || (() => {
+                    const container = document.createElement('div');
+                    container.id = 'toast-container';
+                    container.style.cssText = 'position:fixed;top:20px;right:20px;z-index:10000;';
+                    document.body.appendChild(container);
+                    return container;
+                })();
+
+                const toastEl = document.createElement('div');
+                toastEl.className = 'toast';
+                toastEl.setAttribute('role', 'alert');
+                toastEl.innerHTML = `
+                    <div class="toast-body bg-success text-white">
+                        ${message}
+                    </div>
+                `;
+                toastContainer.appendChild(toastEl);
+
+                const toast = new bootstrap.Toast(toastEl, { delay: 2000 });
+                toast.show();
+
+                setTimeout(() => toastEl.remove(), 2500);
             }
         };
     </script>
