@@ -32,21 +32,23 @@ public class MultiCostCenterEngineTests
     [Fact]
     public void AllCCs_Pass_WhenPoolCoversAll()
     {
-        var state = BuildState(requestCreditsPerCC: 2_000, poolRemaining: 390_000, enterpriseRemaining: 1_000_000,
-            ("Eng", 10, 200_000), ("Research", 5, 150_000), ("Sales", 3, 100_000));
+        // 1 user per CC to keep numbers simple in unit test
+        var state = BuildState(requestCreditsPerCC: 2_000, poolRemaining: 6_100, enterpriseRemaining: 1_000_000,
+            ("Eng", 1, 200_000), ("Research", 1, 150_000), ("Sales", 1, 100_000));
 
         RequestFlowEngine.RunMultiCostCenter(state);
 
         state.CostCenters.Should().AllSatisfy(cc => cc.NodeStates["result"].Should().Be(FlowNodeState.Pass));
-        state.PoolRemainingCredits.Should().Be(384_000); // 390k - 3×2k
+        state.PoolRemainingCredits.Should().Be(100); // 6100 - 3×2k
         state.EnterpriseMeteredRemainingCredits.Should().Be(1_000_000); // untouched
     }
 
     [Fact]
     public void AllCCs_Pass_WhenMeteredBudgetsSufficient_AndPoolEmpty()
     {
+        // 1 user per CC: 2 users × 2k = 4k metered consumption
         var state = BuildState(requestCreditsPerCC: 2_000, poolRemaining: 0, enterpriseRemaining: 1_000_000,
-            ("Eng", 10, 200_000), ("Research", 5, 150_000));
+            ("Eng", 1, 200_000), ("Research", 1, 150_000));
 
         RequestFlowEngine.RunMultiCostCenter(state);
 
@@ -60,16 +62,16 @@ public class MultiCostCenterEngineTests
     [Fact]
     public void Pool_PartiallyCoversFirstCC_ThenExhausts()
     {
-        // Pool has 1500 — not enough for first 2000 request
+        // Pool has 1500 — not enough for 1 user's 2000 request
         var state = BuildState(requestCreditsPerCC: 2_000, poolRemaining: 1_500, enterpriseRemaining: 1_000_000,
-            ("Eng", 10, 200_000), ("Research", 5, 150_000));
+            ("Eng", 1, 200_000), ("Research", 1, 150_000));
 
         RequestFlowEngine.RunMultiCostCenter(state);
 
         state.PoolRemainingCredits.Should().Be(0);
         state.CostCenters[0].NodeStates["pool"].Should().Be(FlowNodeState.Warn);
         state.CostCenters[0].NodeStates["result"].Should().Be(FlowNodeState.Warn);
-        // Second CC has no pool left, also goes metered
+        // Second CC has no pool left, goes metered
         state.CostCenters[1].NodeStates["pool"].Should().Be(FlowNodeState.Block);
         state.CostCenters[1].NodeStates["result"].Should().Be(FlowNodeState.Warn);
     }
@@ -77,15 +79,15 @@ public class MultiCostCenterEngineTests
     [Fact]
     public void FirstCC_DrawsFromPool_SecondCC_GoesMetered()
     {
-        // Pool exactly covers first CC only
+        // Pool exactly covers first CC only (1 user × 2k = 2k)
         var state = BuildState(requestCreditsPerCC: 2_000, poolRemaining: 4_000, enterpriseRemaining: 1_000_000,
-            ("Eng", 10, 200_000), ("Research", 5, 150_000), ("Sales", 3, 100_000));
+            ("Eng", 1, 200_000), ("Research", 1, 150_000), ("Sales", 1, 100_000));
 
         RequestFlowEngine.RunMultiCostCenter(state);
 
-        state.CostCenters[0].NodeStates["result"].Should().Be(FlowNodeState.Pass);
-        state.CostCenters[1].NodeStates["result"].Should().Be(FlowNodeState.Pass);
-        state.CostCenters[2].NodeStates["result"].Should().Be(FlowNodeState.Warn); // metered
+        state.CostCenters[0].NodeStates["result"].Should().Be(FlowNodeState.Pass);  // Gets 2k from pool
+        state.CostCenters[1].NodeStates["result"].Should().Be(FlowNodeState.Pass);  // Gets remaining 2k from pool
+        state.CostCenters[2].NodeStates["result"].Should().Be(FlowNodeState.Warn);  // No pool left, uses 2k metered
         state.PoolRemainingCredits.Should().Be(0);
     }
 
@@ -134,8 +136,9 @@ public class MultiCostCenterEngineTests
     public void ThirdCC_Blocked_WhenEnterpriseLimitReached()
     {
         // Enterprise only covers 2 × 2000 = 4000; third CC blocked
+        // 1 user per CC: total 3 users × 2k = 6k needed
         var state = BuildState(requestCreditsPerCC: 2_000, poolRemaining: 0, enterpriseRemaining: 4_000,
-            ("Eng", 10, 200_000), ("Research", 5, 150_000), ("Sales", 3, 100_000));
+            ("Eng", 1, 200_000), ("Research", 1, 150_000), ("Sales", 1, 100_000));
 
         RequestFlowEngine.RunMultiCostCenter(state);
 
@@ -212,8 +215,9 @@ public class MultiCostCenterEngineTests
     [Fact]
     public void LargeRequest_ExhaustsPoolFaster()
     {
+        // 1 user making 10k request (larger than default 2k)
         var state = BuildState(requestCreditsPerCC: 10_000, poolRemaining: 15_000, enterpriseRemaining: 1_000_000,
-            ("Eng", 10, 200_000), ("Research", 5, 200_000));
+            ("Eng", 1, 200_000), ("Research", 1, 200_000));
 
         RequestFlowEngine.RunMultiCostCenter(state);
 

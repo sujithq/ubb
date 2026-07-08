@@ -58,119 +58,119 @@ public static class ScenarioPresets
         new()
         {
             Key = "multiNormal", Label = "Multi-CC Normal",
-            Description = "3 cost centers make reasonable requests; shared pool covers all.",
+            Description = "3 cost centers with multiple users each; shared pool covers all requests.",
             CostCenters =
             [
-                ("Engineering", 10, 200_000),
-                ("Research", 5, 150_000),
-                ("Sales", 3, 100_000),
+                ("Engineering", 10, 500_000),   // 10 users × 2k = 20k per run
+                ("Research", 5, 300_000),       // 5 users × 2k = 10k per run
+                ("Sales", 3, 200_000),          // 3 users × 2k = 6k per run
             ],
-            PoolRemainingCredits = 390_000,
-            EnterpriseMeteredRemainingCredits = 1_000_000,
+            PoolRemainingCredits = 200_000,      // Enough for ~3-4 runs
+            EnterpriseMeteredRemainingCredits = 2_000_000,
         },
         new()
         {
             Key = "multiPoolExhaustion", Label = "Multi-CC Pool Exhaustion",
-            Description = "3 CCs make larger requests (2k each); pool exhausted mid-flow, metered mode begins.",
+            Description = "Pool exhaustion mid-flow as users request credits; metered phase begins for later CCs.",
             CostCenters =
             [
-                ("Engineering", 10, 200_000),
-                ("Research", 5, 150_000),
-                ("Sales", 3, 100_000),
+                ("Engineering", 10, 500_000),   // 10 users × 2k = 20k
+                ("Research", 5, 300_000),       // 5 users × 2k = 10k
+                ("Sales", 3, 200_000),          // 3 users × 2k = 6k
             ],
-            PoolRemainingCredits = 4_000, // Only enough for 2 CCs, 3rd hits metered
-            EnterpriseMeteredRemainingCredits = 1_000_000,
+            PoolRemainingCredits = 25_000,       // Engineering gets most from pool, Research hits metered
+            EnterpriseMeteredRemainingCredits = 2_000_000,
         },
         new()
         {
             Key = "multiEnterpriseBlock", Label = "Multi-CC Enterprise Block",
-            Description = "Pool exhausted, CCs have metered budgets, but enterprise cap is low (only 4k left).",
+            Description = "Pool exhausted, CCs have metered budgets, but enterprise cap limits total consumption. Sales CC blocked.",
             CostCenters =
             [
-                ("Engineering", 10, 200_000),
-                ("Research", 5, 150_000),
-                ("Sales", 3, 100_000),
+                ("Engineering", 10, 500_000),
+                ("Research", 5, 300_000),
+                ("Sales", 3, 200_000),
             ],
             PoolRemainingCredits = 0,
-            EnterpriseMeteredRemainingCredits = 4_000, // Only enough for 2 CC requests
+            EnterpriseMeteredRemainingCredits = 30_000,  // 10+5 users fit (30k), 3 more users (6k) are blocked
         },
         new()
         {
             Key = "multiUnequalBudgets", Label = "Multi-CC Unequal Budgets",
-            Description = "CCs have different metered budgets; first CC consumes pool, second gets metered, third blocked due to low CC budget.",
+            Description = "CCs have different metered budgets; Support CC with limited budget gets blocked first.",
             CostCenters =
             [
-                ("Engineering", 10, 250_000), // Large metered budget
-                ("Research", 5, 150_000),     // Medium metered budget
-                ("Support", 2, 8_000),        // Small metered budget (problem child)
+                ("Engineering", 10, 600_000),   // Large metered budget
+                ("Research", 5, 300_000),       // Medium metered budget
+                ("Support", 2, 3_000),          // Small metered budget (2 users × 2k = 4k > 3k, so blocks on 2nd user)
             ],
-            PoolRemainingCredits = 2_000,
-            EnterpriseMeteredRemainingCredits = 500_000,
+            PoolRemainingCredits = 10_000,
+            EnterpriseMeteredRemainingCredits = 1_000_000,
         },
         new()
         {
             Key = "multiCCBottleneck", Label = "One CC Bottleneck",
-            Description = "One cost center has exhausted its metered budget (2k request blocks), while others have pool/metered available.",
+            Description = "Research CC has exhausted its metered budget; blocking its users while others proceed.",
             CostCenters =
             [
-                ("Engineering", 10, 300_000),
-                ("Research", 5, 50),         // Exhausted metered (only 50 credits left)
-                ("Sales", 3, 150_000),
+                ("Engineering", 10, 600_000),
+                ("Research", 5, 2_000),         // Exhausted (2 users × 2k = 4k > 2k available)
+                ("Sales", 3, 400_000),
             ],
-            PoolRemainingCredits = 100_000,
-            EnterpriseMeteredRemainingCredits = 800_000,
+            PoolRemainingCredits = 200_000,
+            EnterpriseMeteredRemainingCredits = 1_500_000,
         },
         new()
         {
             Key = "multiTightEnterprise", Label = "Tight Enterprise Cap",
-            Description = "Pool has capacity, CCs have metered, but enterprise cap is very restrictive (only 2k left for 3 requests).",
+            Description = "Pool and CC budgets available, but enterprise cap severely limits total metered consumption.",
             CostCenters =
             [
-                ("Engineering", 10, 200_000),
-                ("Research", 5, 200_000),
-                ("Sales", 3, 200_000),
+                ("Engineering", 10, 500_000),
+                ("Research", 5, 500_000),
+                ("Sales", 3, 500_000),
             ],
-            PoolRemainingCredits = 50_000,
-            EnterpriseMeteredRemainingCredits = 2_000, // Enterprise cap blocks 3rd CC
+            PoolRemainingCredits = 100_000,
+            EnterpriseMeteredRemainingCredits = 25_000,  // Only enough for ~1-2 CCs in metered phase
         },
         new()
         {
             Key = "multiSequentialMetered", Label = "Sequential Metered Consumption",
-            Description = "Pool exhausts after 1st CC, all 3 CCs end up in metered with enterprise cap as final arbiter.",
+            Description = "Pool exhausts early; all CCs shift to metered phase; enterprise cap determines winners.",
             CostCenters =
             [
-                ("Engineering", 10, 8_000),  // Enough for one 2k request
-                ("Research", 5, 8_000),     // Enough for one 2k request
-                ("Sales", 3, 8_000),        // Enough for one 2k request but enterprise blocks
+                ("Engineering", 10, 100_000),   // 10 users × 2k = 20k, limited metered
+                ("Research", 5, 100_000),       // 5 users × 2k = 10k
+                ("Sales", 3, 100_000),          // 3 users × 2k = 6k
             ],
-            PoolRemainingCredits = 1_500, // Not enough for first CC
-            EnterpriseMeteredRemainingCredits = 10_000, // Enough for ~5k (blocks 3rd CC)
+            PoolRemainingCredits = 5_000,        // Barely enough for 1st user
+            EnterpriseMeteredRemainingCredits = 50_000,  // All CCs must use it; decisions to be made
         },
         new()
         {
             Key = "multiLargeSpike", Label = "Large Spike Exhausts Pool",
-            Description = "First CC spike request (3k) exhausts pool immediately; remaining CCs compete in metered phase.",
+            Description = "Engineering request surge exhausts pool; remaining CCs compete in metered phase.",
             CostCenters =
             [
-                ("Engineering", 10, 300_000), // First: makes 3k request
-                ("Research", 5, 100_000),    // Second: must use metered
-                ("Sales", 3, 100_000),       // Third: must use metered if enterprise cap allows
+                ("Engineering", 10, 600_000),   // 10 users × 2k = 20k (the spike)
+                ("Research", 5, 200_000),       // 5 users × 2k = 10k
+                ("Sales", 3, 150_000),          // 3 users × 2k = 6k
             ],
-            PoolRemainingCredits = 2_500, // Allows partial spike, then exhausted
-            EnterpriseMeteredRemainingCredits = 6_000, // Enough for ~3k more (all 3 CCs at 2k each = 6k)
+            PoolRemainingCredits = 22_000,       // Almost covers Engineering, metered for others
+            EnterpriseMeteredRemainingCredits = 100_000,  // Enough for Research + partial Sales
         },
         new()
         {
             Key = "multiEdgeCase", Label = "Multi-CC Edge Case",
-            Description = "Pool exactly equals first CC request; second CC enters metered; third CC blocked at enterprise cap.",
+            Description = "Pool barely covers first CC; remaining CCs compete in metered; enterprise decides final outcome.",
             CostCenters =
             [
-                ("Engineering", 10, 300_000),
-                ("Research", 5, 300_000),
-                ("Sales", 3, 300_000),
+                ("Engineering", 10, 500_000),   // 10 users × 2k = 20k
+                ("Research", 5, 500_000),       // 5 users × 2k = 10k
+                ("Sales", 3, 500_000),          // 3 users × 2k = 6k
             ],
-            PoolRemainingCredits = 2_000, // Exactly one CC request
-            EnterpriseMeteredRemainingCredits = 2_100, // Enough for ~1 request in metered
+            PoolRemainingCredits = 21_000,       // Exactly covers Engineering + 1k buffer
+            EnterpriseMeteredRemainingCredits = 20_000,  // Enough for Research, blocks Sales
         },
     ];
 }
