@@ -14,11 +14,7 @@ public class AppStateService
 
     public event Action? OnChange;
 
-    public void Notify()
-    {
-        Console.WriteLine($"[AppState.Notify] Triggering OnChange for {OnChange?.GetInvocationList().Length ?? 0} subscribers");
-        OnChange?.Invoke();
-    }
+    public void Notify() => OnChange?.Invoke();
 
     public void Reset()
     {
@@ -86,7 +82,6 @@ public class AppStateService
 
     public void RunSingle()
     {
-        Console.WriteLine($"[AppState.RunSingle] FlowState hash: {FlowState.GetHashCode()}, UserUsedCredits: {FlowState.UserUsedCredits}");
         var result = RequestFlowEngine.EvaluateStep(
             "Single request",
             FlowState.SingleRequestCredits,
@@ -97,7 +92,6 @@ public class AppStateService
             FlowState.EnterpriseMeteredRemainingCredits);
 
         ApplyResult(result);
-        Console.WriteLine($"[AppState.RunSingle] After apply - UserUsedCredits: {FlowState.UserUsedCredits}, calling Notify()");
         Notify();
     }
 

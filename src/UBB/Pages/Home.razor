@@ -246,11 +246,6 @@
                         var (loadedState, presetKey) = UrlService.DeserializeFlowState(encoded);
                         if (loadedState != null)
                         {
-                            // DEBUG: Log deserialized state
-                            Console.WriteLine($"[Load] Deserialized ULB: {loadedState.UniversalLimitCredits}");
-                            Console.WriteLine($"[Load] Deserialized UserUsedCredits: {loadedState.UserUsedCredits}");
-                            Console.WriteLine($"[Load] Deserialized Preset: {presetKey ?? "(none)"}");
-                            
                             // Load state without triggering notification during first render
                             State.LoadFlowStateWithoutNotifying(loadedState);
                             if (!string.IsNullOrEmpty(presetKey))
@@ -277,13 +272,6 @@
 
     private async Task ShareSimulation()
     {
-        // DEBUG: Log current state before serialization
-        Console.WriteLine($"[Share] State.FlowState hash: {State.FlowState.GetHashCode()}");
-        Console.WriteLine($"[Share] Current ULB: {State.FlowState.UniversalLimitCredits}");
-        Console.WriteLine($"[Share] Current UserUsedCredits: {State.FlowState.UserUsedCredits}");
-        Console.WriteLine($"[Share] Current PoolRemaining: {State.FlowState.PoolRemainingCredits}");
-        Console.WriteLine($"[Share] Active Preset: {State.ActivePresetKey ?? "(none)"}");
-        
         var encoded = UrlService.SerializeFlowState(State.FlowState, State.ActivePresetKey);
         var baseUri = Nav.Uri.Split('#')[0]; // Remove any existing hash
         var shareUrl = $"{baseUri}#{encoded}";
@@ -304,10 +292,8 @@
 
     private void Run()
     {
-        Console.WriteLine($"[Run] Before: UserUsedCredits = {State.FlowState.UserUsedCredits}, PoolRemaining = {State.FlowState.PoolRemainingCredits}");
         if (State.FlowState.Mode == SimulationMode.Single) State.RunSingle();
         else State.RunAgentic();
-        Console.WriteLine($"[Run] After: UserUsedCredits = {State.FlowState.UserUsedCredits}, PoolRemaining = {State.FlowState.PoolRemainingCredits}");
     }
 
     private void OnStepChanged((string Id, decimal Credits) change) =>
