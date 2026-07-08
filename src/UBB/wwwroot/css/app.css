@@ -1,4 +1,12 @@
 /* ── UBB Simulator styles ─────────────────────────────────────────────────── */
+
+/* Suppress the browser focus outline on non-interactive elements that
+   Blazor WASM may programmatically focus during navigation/render. */
+h1:focus, h2:focus, h3:focus, h4:focus, h5:focus, h6:focus,
+p:focus, section:focus, div:focus {
+    outline: none;
+}
+
 :root {
     --ubb-pass-color:   #198754;
     --ubb-pass-bg:      #d1e7dd;
