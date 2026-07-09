@@ -232,8 +232,8 @@ This is the **highest-priority SOLID violation** in the codebase.
 | TD-01 | **High** | **Fixed** | `MultiCCPanel.razor` | Routes through `AppStateService.RunMultiCostCenter()`; subscribes to `OnChange` to sync URL-restored state; all edits call `SetMultiCCState()` |
 | TD-02 | **High** | Open | `UrlStateService.cs` | Fully implemented, never wired to UI — dead feature or forgotten Share button |
 | TD-03 | **High** | Open | `plan.md` | Describes architecture that was never built; actively misleading |
-| TD-04 | Medium | Open | All node-state dicts | Magic string keys `"pool"`, `"costCentre"` etc. — no compile-time safety |
-| TD-05 | Medium | Open | `DailySnapshot`, `SimulationResult`, `UserConfig`, `CostCenterConfig` | Dead models from planned 30-day engine; 0% coverage; inflate class count |
+| TD-04 | Medium | **Fixed** | All node-state dicts | `FlowNode` enum used throughout — no magic string keys anywhere in the codebase |
+| TD-05 | Medium | **Fixed** | ~~`DailySnapshot`, `SimulationResult`, `UserConfig`, `CostCenterConfig`~~ | Deleted; `SimulationConfig.CostCenters` property removed; 0% noise eliminated |
 | TD-06 | Medium | Open | `BillingConstants.cs` | Promo credit values hardcoded; promo period expires Sept 2026 — no config mechanism |
 | TD-07 | Medium | **Fixed** | `MultiCostCenterState.Reset()` | Uses `InitialMeteredBudget` / `InitialPoolRemainingCredits` — restored correctly per-CC and org-level |
 | TD-08 | Medium | Open | `README.md` | Feature count, project structure, and preset counts are stale |
@@ -255,11 +255,11 @@ This is the **highest-priority SOLID violation** in the codebase.
 
 ### P2 — Fix Before Next Feature (SOLID / architecture)
 4. ~~**TD-01**~~ — Fixed: multi-CC now routes through `AppStateService`; subscribes to `OnChange`; all edits publish state
-5. **TD-04** — Introduce `FlowNode` enum, eliminate magic strings — small change, high safety gain
+5. ~~**TD-04**~~ — Already fixed: `FlowNode` enum used everywhere
 6. **TD-02** — Wire `UrlStateService` to a Share button or delete it
 
 ### P3 — Clean-Up Sprint
-7. **TD-05** — Delete dead model classes (`DailySnapshot`, `SimulationResult`, `UserConfig`, `CostCenterConfig`) — raises effective coverage to ~97%
+7. ~~**TD-05**~~ — Fixed: deleted `DailySnapshot`, `SimulationResult`, `UserConfig`, `CostCenterConfig`; removed `SimulationConfig.CostCenters`
 8. **TD-03** — Rewrite `plan.md` as an accurate architecture doc
 9. **TD-08** — Update README features list, project structure table, preset count
 

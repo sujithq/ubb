@@ -31,7 +31,7 @@ Agents are defined in `.github/agents/`. Do not consider a change complete until
 - **All simulation execution routes through `AppStateService`**. Components must not call `RequestFlowEngine` directly.
 - **No magic string node-state keys** in new code. Use the existing string constants or add to `FlowResult.DefaultNodeStates()`.
 - **`UrlStateService`** is registered but not yet wired to UI. Do not remove it; wire it to a Share button when implementing.
-- **Dead models** (`DailySnapshot`, `SimulationResult`, `UserConfig`, `CostCenterConfig`) — do not add new code that depends on them. They are earmarked for deletion.
+- **Dead models deleted** — `DailySnapshot`, `SimulationResult`, `UserConfig`, `CostCenterConfig` have been removed from `UBB.Core/Models/`. Do not re-add them.
 
 ---
 

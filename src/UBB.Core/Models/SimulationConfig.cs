@@ -14,5 +14,4 @@ public class SimulationConfig
     public decimal? EnterpriseMeteredBudgetDollars { get; set; }
     /// <summary>"Stop usage when budget limit is reached" for enterprise budget. Default false.</summary>
     public bool StopOnEnterpriseMeteredExhaustion { get; set; } = false;
-    public List<CostCenterConfig> CostCenters { get; set; } = [];
 }
