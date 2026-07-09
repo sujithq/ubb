@@ -43,6 +43,18 @@ public class AppStateService
         }
     }
 
+    public void LoadMultiCCStateWithoutNotifying(MultiCostCenterState? state)
+    {
+        MultiCCState = state;
+        // Don't notify - used during initial load to avoid double render
+    }
+
+    public void SetModeWithoutNotifying(SimulationMode mode)
+    {
+        FlowState.Mode = mode;
+        // Don't notify - used during initial load to avoid double render
+    }
+
     public void UpdateField(Action<RequestFlowState> updater)
     {
         updater?.Invoke(FlowState);

@@ -243,11 +243,17 @@
                     var encoded = hash[1..]; // Remove leading #
                     if (!string.IsNullOrEmpty(encoded))
                     {
-                        var (loadedState, presetKey) = UrlService.DeserializeFlowState(encoded);
-                        if (loadedState != null)
+                        // Try new app state format first (includes multi-CC)
+                        var (flowState, multiCCState, presetKey, mode) = UrlService.DeserializeAppState(encoded);
+                        if (flowState != null)
                         {
-                            // Load state without triggering notification during first render
-                            State.LoadFlowStateWithoutNotifying(loadedState);
+                            // Restore complete app state: mode, flow state, multi-CC state, and preset
+                            State.SetModeWithoutNotifying(mode);
+                            State.LoadFlowStateWithoutNotifying(flowState);
+                            if (multiCCState != null)
+                            {
+                                State.LoadMultiCCStateWithoutNotifying(multiCCState);
+                            }
                             if (!string.IsNullOrEmpty(presetKey))
                             {
                                 State.ActivePresetKey = presetKey;
@@ -255,6 +261,21 @@
                             // Manually trigger re-render after state is loaded
                             await Task.Delay(10);
                             StateHasChanged();
+                        }
+                        else
+                        {
+                            // Fallback to legacy flow state format (TD-02 backward compatibility)
+                            var (legacyFlowState, legacyPresetKey) = UrlService.DeserializeFlowState(encoded);
+                            if (legacyFlowState != null)
+                            {
+                                State.LoadFlowStateWithoutNotifying(legacyFlowState);
+                                if (!string.IsNullOrEmpty(legacyPresetKey))
+                                {
+                                    State.ActivePresetKey = legacyPresetKey;
+                                }
+                                await Task.Delay(10);
+                                StateHasChanged();
+                            }
                         }
                     }
                 }
@@ -272,7 +293,12 @@
 
     private async Task ShareSimulation()
     {
-        var encoded = UrlService.SerializeFlowState(State.FlowState, State.ActivePresetKey);
+        // Serialize complete app state: flow + multi-CC + preset + mode
+        var encoded = UrlService.SerializeAppState(
+            State.FlowState,
+            State.MultiCCState,
+            State.ActivePresetKey,
+            State.FlowState.Mode);
         var baseUri = Nav.Uri.Split('#')[0]; // Remove any existing hash
         var shareUrl = $"{baseUri}#{encoded}";
         
