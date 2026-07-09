@@ -133,6 +133,25 @@ public class MultiCostCenterStateTests
         state.InitialEnterpriseMeteredRemainingCredits.Should().Be(preset.EnterpriseMeteredRemainingCredits);
     }
 
+    // ── TD-14: AddLog uses injectable clock for deterministic timestamps ──────
+
+    [Fact]
+    public void AddLog_UsesInjectedClock_ForDeterministicTimestamps()
+    {
+        var state = MultiCostCenterState.CreateDefault();
+        state.Clock = new FixedTimeProvider(new DateTimeOffset(2026, 7, 9, 14, 30, 45, TimeSpan.Zero));
+
+        state.AddLog("hello");
+
+        state.Logs.Should().ContainSingle().Which.Should().Be("[14:30:45] hello");
+    }
+
+    private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
+        public override TimeZoneInfo LocalTimeZone => TimeZoneInfo.Utc;
+    }
+
     [Fact]
     public void ApplyTo_SetsInitialMeteredBudget_ForEachCC()
     {

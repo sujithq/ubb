@@ -67,7 +67,15 @@ public class MultiCostCenterState
     }
 
     /// <summary>
+    /// Clock used for log timestamps. Defaults to the system clock;
+    /// tests can inject a fixed TimeProvider for deterministic output.
+    /// Excluded from JSON so URL-shared state stays serializable.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public TimeProvider Clock { get; set; } = TimeProvider.System;
+
+    /// <summary>
     /// Add a log entry.
     /// </summary>
-    public void AddLog(string message) => Logs.Add($"[{DateTime.Now:HH:mm:ss}] {message}");
+    public void AddLog(string message) => Logs.Add($"[{Clock.GetLocalNow():HH:mm:ss}] {message}");
 }

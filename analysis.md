@@ -154,7 +154,7 @@ Read-only components receive state via `[Parameter]` (`StatCards` takes `FlowSta
 
 | ID | Severity | Status | Location | Issue |
 |----|----------|--------|----------|-------|
-| TD-14 | Low | Open | `MultiCostCenterState.AddLog` | `DateTime.Now` inside the pure domain library — injectable clock or caller-supplied timestamp would restore purity and full test determinism |
+| TD-14 | Low | **Fixed** | `MultiCostCenterState.AddLog` | Injectable `TimeProvider Clock` (defaults to `TimeProvider.System`, `[JsonIgnore]` for URL serialization); deterministic timestamp test added |
 | TD-15 | Medium | **Fixed** | `Home.razor` | URL share/restore extracted to `UrlSharingService` (DI); Home.razor 347 → ~250 lines, `@code` block now orchestration-only |
 | TD-16 | Low | Open | `index.html` | WASM cold-load failure leaves an indefinite spinner — add a JS timeout that swaps in a "reload" message |
 | TD-17 | Low | **Fixed** | `UrlStateService` | Deleted `Serialize(SimulationConfig)`/`Deserialize`/`PushToUrl`/`PushFlowStateToUrl`/`LoadFlowStateFromUrl` + the `SimulationConfig` model; tests retargeted to live paths. `DeserializeFlowState` legacy fallback retained |
@@ -170,7 +170,7 @@ Read-only components receive state via `[Parameter]` (`StatCards` takes `FlowSta
 2. ~~**TD-17**~~ — Fixed: dead `SimulationConfig` serialize path and model deleted; `DeserializeFlowState` legacy fallback kept
 
 ### P2 — Opportunistic
-3. **TD-14** — Timestamp injection for `AddLog`
+3. ~~**TD-14**~~ — Fixed: `TimeProvider` injection for `AddLog`
 4. **TD-16** — Cold-load timeout fallback in `index.html`
 5. **TD-18** — One E2E happy-path test per mode (run + assert result node)
 
