@@ -271,7 +271,7 @@ This is the **highest-priority SOLID violation** in the codebase.
 14. ~~**CSP**~~ — Done: CSP meta in `index.html` + `404.html`; `window.ubb` externalized to `js/ubb.js` (no `unsafe-inline` in script-src); `showToast` XSS sink fixed (textContent)
 
 ### P5 — Nice to Have
-15. **OCP** — `ISimulationMode` interface for extensible mode system
-16. **Factor XI** — `SimulationLogEntry` record with `Level` + `Timestamp`
-17. **Performance** — `ShouldRender()` overrides on leaf components
+15. ~~**OCP**~~ — Closed as not warranted (2026-07-09): per-mode surface is 3 tab buttons + 2 render blocks + a 2-branch `Run()` dispatch, all colocated and compile-time-checked. An `ISimulationMode` registry with `RenderFragment` indirection would add complexity for a 4th mode that isn't planned — speculative generality. Revisit if a new mode is actually requested.
+16. ~~**Factor XI**~~ — Closed as not warranted (2026-07-09): the PASS/WARN/BLOCK prefix convention already encodes severity (and drives `ExecutionLog` colouring); multi-CC logs carry timestamps. Restructuring `Logs` would break the JSON shape of every previously shared URL for a filtering feature nobody requested. Revisit if log export/filtering becomes a requirement.
+17. ~~**Performance**~~ — Closed as not warranted (2026-07-09): leaf components are lightweight and Blazor diffing keeps re-renders cheap at this scale; manual `ShouldRender()` suppression adds stale-UI risk with no measurable gain. Revisit only if profiling shows a real bottleneck.
 18. ~~**CDN vendoring**~~ — Done 2026-07-09: Bootstrap 5.3.8 vendored to `wwwroot/lib/bootstrap/` (downloads verified against the previously-pinned SRI hashes); CSP tightened to `'self'`-only sources; zero runtime CDN dependencies remain
