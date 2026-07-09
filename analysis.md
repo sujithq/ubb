@@ -231,7 +231,7 @@ This is the **highest-priority SOLID violation** in the codebase.
 |----|----------|--------|----------|-------|
 | TD-01 | **High** | **Fixed** | `MultiCCPanel.razor` | Routes through `AppStateService.RunMultiCostCenter()`; subscribes to `OnChange` to sync URL-restored state; all edits call `SetMultiCCState()` |
 | TD-02 | **High** | Open | `UrlStateService.cs` | Fully implemented, never wired to UI — dead feature or forgotten Share button |
-| TD-03 | **High** | Open | `plan.md` | Describes architecture that was never built; actively misleading |
+| TD-03 | **High** | **Fixed** | `plan.md` | Rewritten as accurate as-built architecture doc (solution layout, billing flow, state management, quality gates) |
 | TD-04 | Medium | **Fixed** | All node-state dicts | `FlowNode` enum used throughout — no magic string keys anywhere in the codebase |
 | TD-05 | Medium | **Fixed** | ~~`DailySnapshot`, `SimulationResult`, `UserConfig`, `CostCenterConfig`~~ | Deleted; `SimulationConfig.CostCenters` property removed; 0% noise eliminated |
 | TD-06 | Medium | Open | `BillingConstants.cs` | Promo credit values hardcoded; promo period expires Sept 2026 — no config mechanism |
@@ -260,7 +260,7 @@ This is the **highest-priority SOLID violation** in the codebase.
 
 ### P3 — Clean-Up Sprint
 7. ~~**TD-05**~~ — Fixed: deleted `DailySnapshot`, `SimulationResult`, `UserConfig`, `CostCenterConfig`; removed `SimulationConfig.CostCenters`
-8. **TD-03** — Rewrite `plan.md` as an accurate architecture doc
+8. ~~**TD-03**~~ — Fixed: `plan.md` rewritten as accurate as-built architecture doc
 9. **TD-08** — Update README features list, project structure table, preset count
 
 ### P4 — Before Public / Production Release
