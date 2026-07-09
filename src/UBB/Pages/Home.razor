@@ -247,9 +247,9 @@
                         var (flowState, multiCCState, presetKey, mode) = UrlService.DeserializeAppState(encoded);
                         if (flowState != null)
                         {
-                            // Restore complete app state: mode, flow state, multi-CC state, and preset
-                            State.SetModeWithoutNotifying(mode);
+                            // Restore complete app state without notifications (to avoid double-render)
                             State.LoadFlowStateWithoutNotifying(flowState);
+                            State.SetModeWithoutNotifying(mode);  // Set mode AFTER loading state to preserve it
                             if (multiCCState != null)
                             {
                                 State.LoadMultiCCStateWithoutNotifying(multiCCState);
@@ -302,7 +302,8 @@
         var baseUri = Nav.Uri.Split('#')[0]; // Remove any existing hash
         var shareUrl = $"{baseUri}#{encoded}";
         
-        UrlService.PushFlowStateToUrl(Nav, State.FlowState, State.ActivePresetKey);
+        // Update URL bar to reflect shareable state
+        Nav.NavigateTo(shareUrl, forceLoad: false);
         
         // Copy to clipboard
         try

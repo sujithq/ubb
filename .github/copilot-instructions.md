@@ -6,9 +6,10 @@ Pure client-side SPA: all billing logic runs in-browser via C#, no backend.
 
 **Solution layout**
 ```
-src/UBB.Core/   — pure C# library: Models + RequestFlowEngine + BillingConstants + ScenarioPresets
-src/UBB/        — Blazor WASM app (UI only; references UBB.Core)
-tests/UBB.Tests/— xUnit + FluentAssertions unit tests (references UBB.Core only)
+src/UBB.Core/     — pure C# library: Models + RequestFlowEngine + BillingConstants + ScenarioPresets
+src/UBB/          — Blazor WASM app (UI only; references UBB.Core)
+tests/UBB.Tests/  — xUnit + FluentAssertions unit tests (references UBB.Core only)
+tests/UBB.E2E/    — Playwright E2E tests (URL sharing, state restoration, mode switching)
 ```
 
 ---
@@ -16,10 +17,11 @@ tests/UBB.Tests/— xUnit + FluentAssertions unit tests (references UBB.Core onl
 ## Non-negotiable rules
 
 ### After every code change you must:
-1. Invoke the **`#qa` agent** — build must be clean, all 70 tests must pass, coverage ≥ 80%.
+1. Invoke the **`#qa` agent** — build must be clean, all tests must pass, coverage ≥ 80%.
 2. For any change touching security-relevant files (`index.html`, `404.html`, `*.csproj`, `catch` blocks, CDN links), also invoke the **`#security` agent**.
+3. **For URL sharing changes (TD-02, TD-03)**: Run E2E tests locally with `./run-e2e-tests.ps1` (or `.sh` on macOS/Linux) to verify across all simulation modes.
 
-Agents are defined in `.github/agents/`. Do not consider a change complete until both relevant agents report green.
+Agents are defined in `.github/agents/`. Do not consider a change complete until both relevant agents report green. E2E tests must pass before pushing.
 
 ---
 
@@ -69,7 +71,8 @@ Agents are defined in `.github/agents/`. Do not consider a change complete until
 
 | Workflow | File | What it checks |
 |----------|------|----------------|
-| **QA** | `.github/workflows/qa.yml` | Build (warnings as errors) · Tests · Coverage ≥ 80% |
+| **QA** | `.github/workflows/qa.yml` | Build (warnings as errors) · Tests (141 unit tests) · Coverage ≥ 80% (UBB.Core) |
 | **Security** | `.github/workflows/security.yml` | Vulnerable NuGet packages · Roslyn analyzers · SRI integrity audit · Gitleaks secret scan |
+| **E2E** | `.github/workflows/e2e-tests.yml` | URL sharing across all modes (Single, Agentic, Multi-CC) · Preset preservation · State restoration · URL format validation |
 
-Both workflows **must be green** before merging to `main`.
+All three workflows **must be green** before merging to `main`.

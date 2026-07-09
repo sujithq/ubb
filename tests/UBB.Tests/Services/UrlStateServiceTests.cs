@@ -86,4 +86,70 @@ public class UrlStateServiceTests
         var act = () => _svc.Deserialize(truncated);
         act.Should().NotThrow();
     }
+
+    // ── TD-03: SerializeAppState & DeserializeAppState (Flow + Multi-CC) ─────
+
+    [Fact]
+    public void SerializeAppState_RoundTrip_WithFlowStateOnly()
+    {
+        var flowState = new RequestFlowState
+        {
+            UserType = UserType.Standard,
+            Mode = SimulationMode.Single,
+            UniversalLimitCredits = 1000,
+            UserUsedCredits = 250,
+        };
+
+        var encoded = _svc.SerializeAppState(flowState, multiCCState: null, activePresetKey: "test-preset", mode: SimulationMode.Single);
+        var (restoredFlow, restoredMultiCC, presetKey, mode) = _svc.DeserializeAppState(encoded);
+
+        restoredFlow.Should().NotBeNull();
+        restoredFlow!.UserType.Should().Be(UserType.Standard);
+        restoredFlow.UniversalLimitCredits.Should().Be(1000);
+        restoredFlow.UserUsedCredits.Should().Be(250);
+        restoredMultiCC.Should().BeNull();
+        presetKey.Should().Be("test-preset");
+        mode.Should().Be(SimulationMode.Single);
+    }
+
+    [Fact]
+    public void SerializeAppState_RoundTrip_WithMultiCCState()
+    {
+        var flowState = new RequestFlowState
+        {
+            UserType = UserType.Architect,
+            Mode = SimulationMode.MultiCostCenter,
+            UniversalLimitCredits = 5000,
+        };
+        var multiCCState = MultiCostCenterState.CreateDefault();
+
+        var encoded = _svc.SerializeAppState(flowState, multiCCState, activePresetKey: null, mode: SimulationMode.MultiCostCenter);
+        var (restoredFlow, restoredMultiCC, presetKey, mode) = _svc.DeserializeAppState(encoded);
+
+        restoredFlow.Should().NotBeNull();
+        restoredFlow!.Mode.Should().Be(SimulationMode.MultiCostCenter);
+        restoredMultiCC.Should().NotBeNull();
+        restoredMultiCC!.CostCenters.Should().HaveCount(3);
+        restoredMultiCC.CostCenters[0].Name.Should().Be("Engineering");
+        restoredMultiCC.PoolRemainingCredits.Should().Be(390_000);
+        mode.Should().Be(SimulationMode.MultiCostCenter);
+    }
+
+    [Fact]
+    public void SerializeFlowState_RoundTrip_WithPreset()
+    {
+        var flowState = new RequestFlowState
+        {
+            UserType = UserType.Standard,
+            SingleRequestCredits = 200,
+        };
+
+        var encoded = _svc.SerializeFlowState(flowState, activePresetKey: "preset-123");
+        var (restoredFlow, presetKey) = _svc.DeserializeFlowState(encoded);
+
+        restoredFlow.Should().NotBeNull();
+        restoredFlow!.SingleRequestCredits.Should().Be(200);
+        presetKey.Should().Be("preset-123");
+    }
 }
+
