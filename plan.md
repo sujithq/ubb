@@ -27,7 +27,6 @@ UBB.sln
 │   │   ├── AgenticStep.cs            One step of the agentic workflow
 │   │   ├── RequestPreset.cs          Single-user scenario preset data
 │   │   ├── MultiCCPreset.cs          Multi-CC scenario preset data
-│   │   ├── SimulationConfig.cs       Legacy URL-sharing config (seats, toggles)
 │   │   ├── Enums.cs                  UserType, SimulationMode
 │   │   └── LicenseType.cs            Business / Enterprise
 │   └── Services/
@@ -127,6 +126,5 @@ dotnet publish src/UBB/UBB.csproj -c Release -o publish
 
 ## Known cleanup candidates
 
-- `SimulationConfig` + legacy `Serialize`/`Deserialize`/`PushToUrl` in `UrlStateService` — superseded by `SerializeAppState`; kept for backward-compatible URL decoding.
-
+> `SimulationConfig` and the legacy `Serialize`/`Deserialize`/`PushToUrl` path were deleted on 2026-07-09 (production-dead). The legacy share-URL fallback is `DeserializeFlowState` — keep it for backward-compatible URL decoding.
 > `Pages/Counter.razor`, `Pages/Weather.razor`, and the unused `Layout/NavMenu.razor` template leftovers were deleted on 2026-07-09.

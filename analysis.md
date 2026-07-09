@@ -157,7 +157,7 @@ Read-only components receive state via `[Parameter]` (`StatCards` takes `FlowSta
 | TD-14 | Low | Open | `MultiCostCenterState.AddLog` | `DateTime.Now` inside the pure domain library — injectable clock or caller-supplied timestamp would restore purity and full test determinism |
 | TD-15 | Medium | Open | `Home.razor` (347 lines) | SRP pressure: URL-restore logic and the controls column are extraction candidates before the next feature lands |
 | TD-16 | Low | Open | `index.html` | WASM cold-load failure leaves an indefinite spinner — add a JS timeout that swaps in a "reload" message |
-| TD-17 | Low | Open | `UrlStateService` | Legacy `Serialize(SimulationConfig)` / `Deserialize` / `PushToUrl` are production-dead (test-only); `SimulationConfig` model exists solely for them. Note: the *actual* legacy share-URL fallback is `DeserializeFlowState` — that one must stay |
+| TD-17 | Low | **Fixed** | `UrlStateService` | Deleted `Serialize(SimulationConfig)`/`Deserialize`/`PushToUrl`/`PushFlowStateToUrl`/`LoadFlowStateFromUrl` + the `SimulationConfig` model; tests retargeted to live paths. `DeserializeFlowState` legacy fallback retained |
 | TD-18 | Low | Open | `tests/UBB.E2E` | E2E covers URL sharing only — no E2E for Run/preset/mode-switch happy paths (unit/bUnit tests cover the logic, so risk is low) |
 | TD-19 | Info | Noted | `MultiCCPanel` | Every field edit calls `SetMultiCCState` → `Notify()` → app-wide re-render. Correct and required for URL freshness; revisit only if input latency is ever observed |
 
@@ -167,7 +167,7 @@ Read-only components receive state via `[Parameter]` (`StatCards` takes `FlowSta
 
 ### P1 — Before next feature
 1. **TD-15** — Extract `Home.razor` URL-restore logic (and optionally the controls column) — largest file, still growing
-2. **TD-17** — Delete the production-dead `SimulationConfig` serialize path + its tests (keep `DeserializeFlowState` legacy fallback)
+2. ~~**TD-17**~~ — Fixed: dead `SimulationConfig` serialize path and model deleted; `DeserializeFlowState` legacy fallback kept
 
 ### P2 — Opportunistic
 3. **TD-14** — Timestamp injection for `AddLog`
