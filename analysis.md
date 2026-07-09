@@ -235,10 +235,10 @@ This is the **highest-priority SOLID violation** in the codebase.
 | TD-04 | Medium | Open | All node-state dicts | Magic string keys `"pool"`, `"costCentre"` etc. — no compile-time safety |
 | TD-05 | Medium | Open | `DailySnapshot`, `SimulationResult`, `UserConfig`, `CostCenterConfig` | Dead models from planned 30-day engine; 0% coverage; inflate class count |
 | TD-06 | Medium | Open | `BillingConstants.cs` | Promo credit values hardcoded; promo period expires Sept 2026 — no config mechanism |
-| TD-07 | Medium | Open | `MultiCostCenterState.Reset()` | Hardcodes `200_000` as default CC budget instead of using the actual configured values |
+| TD-07 | Medium | **Fixed** | `MultiCostCenterState.Reset()` | Uses `InitialMeteredBudget` / `InitialPoolRemainingCredits` — restored correctly per-CC and org-level |
 | TD-08 | Medium | Open | `README.md` | Feature count, project structure, and preset counts are stale |
-| TD-09 | Low | Open | `UrlStateService.Deserialize` | Bare `catch {}` swallows all exceptions silently — no user feedback |
-| TD-10 | Low | Open | `AppStateService` | `SetUserType`, `SetMode`, `Reset` do not call `ClearActivePreset()` — preset badge can show stale state after user-type change |
+| TD-09 | Low | **Fixed** | `Home.razor` URL restore | Shows warning toast when hash is present but neither format can be decoded |
+| TD-10 | Low | **Fixed** | `AppStateService` | `SetUserType`, `SetMode`, `Reset` all clear `ActivePresetKey` inline — preset badge correctly invalidated |
 | TD-11 | Low | **Fixed** | `app.css` | `outline:none` was scoped to all `div:focus`; now scoped to non-interactive elements |
 | TD-12 | Low | **Fixed** | `src/UBB/Models/`, `src/UBB/Services/` | CS0436 duplicate type warnings from files not removed after UBB.Core extraction |
 | TD-13 | Low | Open | `MultiCostCenterState.cs` | `Reset()` comment says "Default metered budget" hardcoded at `200_000` — different from the presets |

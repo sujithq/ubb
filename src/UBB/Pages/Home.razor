@@ -276,6 +276,11 @@
                                 await Task.Delay(10);
                                 StateHasChanged();
                             }
+                            else
+                            {
+                                // Both formats failed — the hash is present but unreadable
+                                await JS.InvokeVoidAsync("ubb.showToast", "⚠️ Could not restore shared state — the link may be invalid or incomplete.");
+                            }
                         }
                     }
                 }

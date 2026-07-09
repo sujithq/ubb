@@ -151,5 +151,59 @@ public class UrlStateServiceTests
         restoredFlow!.SingleRequestCredits.Should().Be(200);
         presetKey.Should().Be("preset-123");
     }
+
+    // ── TD-09: DeserializeAppState returns null (not throws) on bad input ─────
+
+    [Fact]
+    public void DeserializeAppState_ReturnsNullFlowState_WhenInputIsGarbage()
+    {
+        var act = () => _svc.DeserializeAppState("!!!not-base64!!!");
+
+        act.Should().NotThrow();
+        var (flow, multiCC, presetKey, mode) = _svc.DeserializeAppState("!!!not-base64!!!");
+        flow.Should().BeNull();
+        multiCC.Should().BeNull();
+        presetKey.Should().BeNull();
+        mode.Should().Be(SimulationMode.Single); // default fallback
+    }
+
+    [Fact]
+    public void DeserializeAppState_ReturnsNullFlowState_WhenInputIsValidBase64ButNotJson()
+    {
+        var notJson = Convert.ToBase64String("not json"u8.ToArray())
+                             .Replace('+', '-').Replace('/', '_').TrimEnd('=');
+
+        var act = () => _svc.DeserializeAppState(notJson);
+
+        act.Should().NotThrow();
+        var (flow, _, _, _) = _svc.DeserializeAppState(notJson);
+        flow.Should().BeNull();
+    }
+
+    // ── TD-09: DeserializeFlowState returns null (not throws) on bad input ────
+
+    [Fact]
+    public void DeserializeFlowState_ReturnsNullState_WhenInputIsGarbage()
+    {
+        var act = () => _svc.DeserializeFlowState("!!!not-base64!!!");
+
+        act.Should().NotThrow();
+        var (flow, presetKey) = _svc.DeserializeFlowState("!!!not-base64!!!");
+        flow.Should().BeNull();
+        presetKey.Should().BeNull();
+    }
+
+    [Fact]
+    public void DeserializeFlowState_ReturnsNullState_WhenInputIsValidBase64ButNotJson()
+    {
+        var notJson = Convert.ToBase64String("not json"u8.ToArray())
+                             .Replace('+', '-').Replace('/', '_').TrimEnd('=');
+
+        var act = () => _svc.DeserializeFlowState(notJson);
+
+        act.Should().NotThrow();
+        var (flow, _) = _svc.DeserializeFlowState(notJson);
+        flow.Should().BeNull();
+    }
 }
 
