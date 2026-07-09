@@ -34,6 +34,12 @@ jobs:
       - name: Publish
         run: dotnet publish src/UBB/UBB.csproj -c Release -o publish
 
+      - name: Allow Blazor's inline importmap through the CSP (hash-source)
+        # dotnet publish injects an inline <script type="importmap"> with fingerprinted
+        # asset names; script-src 'self' would block it and the app would never boot.
+        # Add its SHA-256 as a hash-source instead of weakening the CSP with 'unsafe-inline'.
+        run: python3 .github/scripts/patch-csp-importmap.py publish/wwwroot
+
       - name: Rewrite base href for project pages
         # For a project site (username.github.io/<repo>) the <base href> must match the repo path.
         # Derives the repo name automatically; skip for user/org pages by setting repo variable PAGES_ROOT=true.
