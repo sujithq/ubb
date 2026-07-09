@@ -4,6 +4,15 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy"
+          content="base-uri 'self';
+                   default-src 'self';
+                   object-src 'none';
+                   frame-ancestors 'none';
+                   img-src 'self' data:;
+                   script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net;
+                   style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;
+                   connect-src 'self';" />
     <title>GitHub Copilot UBB Simulator</title>
     <base href="/" />
     <link rel="preload" id="webassembly" />
@@ -31,46 +40,7 @@
         <a href="." class="alert-link">Reload</a>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
-    <script>
-        window.ubb = {
-            initPopovers: function () {
-                if (!window.bootstrap) return;
-                document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function (el) {
-                    bootstrap.Popover.getOrCreateInstance(el, {
-                        trigger: 'hover focus',
-                        delay: { show: 100, hide: 600 }
-                    });
-                });
-            },
-            getHash: function () {
-                return window.location.hash;
-            },
-            showToast: function (message) {
-                const toastContainer = document.getElementById('toast-container') || (() => {
-                    const container = document.createElement('div');
-                    container.id = 'toast-container';
-                    container.style.cssText = 'position:fixed;top:20px;right:20px;z-index:10000;';
-                    document.body.appendChild(container);
-                    return container;
-                })();
-
-                const toastEl = document.createElement('div');
-                toastEl.className = 'toast';
-                toastEl.setAttribute('role', 'alert');
-                toastEl.innerHTML = `
-                    <div class="toast-body bg-success text-white">
-                        ${message}
-                    </div>
-                `;
-                toastContainer.appendChild(toastEl);
-
-                const toast = new bootstrap.Toast(toastEl, { delay: 2000 });
-                toast.show();
-
-                setTimeout(() => toastEl.remove(), 2500);
-            }
-        };
-    </script>
+    <script src="js/ubb.js"></script>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
 </body>
 

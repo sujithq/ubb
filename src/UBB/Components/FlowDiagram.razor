@@ -1,37 +1,37 @@
 <div class="row g-3 mt-1">
     <div class="col-md-4">
-        <div class="ubb-node @Cls(FlowNode.User)">
-            <div class="ubb-node-title">1. User-level control <InfoTip Placement="right" Text="Step 1: The most specific ULB applies (individual > cost-centre ULB > universal). If the user would exceed it, the request is immediately blocked — always a hard stop, regardless of pool or budget availability." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/budgets-for-usage-based-billing#how-billing-flows-through-budgets" /></div>
+        <div class="ubb-node @Cls(FlowNode.User)" role="group" aria-label="Step 1, user-level control: @StateText(FlowNode.User)">
+            <div class="ubb-node-title">@StateIcon(FlowNode.User)1. User-level control <InfoTip Placement="right" Text="Step 1: The most specific ULB applies (individual > cost-centre ULB > universal). If the user would exceed it, the request is immediately blocked — always a hard stop, regardless of pool or budget availability." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/budgets-for-usage-based-billing#how-billing-flows-through-budgets" /></div>
             <div class="ubb-node-detail">@UserDetail</div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="ubb-node @Cls(FlowNode.Pool)">
-            <div class="ubb-node-title">2. Shared pool <InfoTip Placement="top" Text="Step 2: If the ULB check passes, the request draws from the shared enterprise pool of included AI credits. Drawing from the pool is free — no extra charge applies." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/usage-based-billing-for-organizations-and-enterprises#how-do-ai-credits-work" /></div>
+        <div class="ubb-node @Cls(FlowNode.Pool)" role="group" aria-label="Step 2, shared pool: @StateText(FlowNode.Pool)">
+            <div class="ubb-node-title">@StateIcon(FlowNode.Pool)2. Shared pool <InfoTip Placement="top" Text="Step 2: If the ULB check passes, the request draws from the shared enterprise pool of included AI credits. Drawing from the pool is free — no extra charge applies." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/usage-based-billing-for-organizations-and-enterprises#how-do-ai-credits-work" /></div>
             <div class="ubb-node-detail">@Fmt(FlowState.PoolRemainingCredits) credits remaining</div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="ubb-node @Cls(FlowNode.Paid)">
-            <div class="ubb-node-title">3. Paid mode <InfoTip Placement="top" Text="When the pool is exhausted, usage moves to metered mode at $0.01 per AI credit. Only active if the 'AI credit paid usage' policy is enabled on your enterprise or organisation." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/usage-based-billing-for-organizations-and-enterprises#what-happens-if-i-exceed-my-included-ai-credits" /></div>
+        <div class="ubb-node @Cls(FlowNode.Paid)" role="group" aria-label="Step 3, paid mode: @StateText(FlowNode.Paid)">
+            <div class="ubb-node-title">@StateIcon(FlowNode.Paid)3. Paid mode <InfoTip Placement="top" Text="When the pool is exhausted, usage moves to metered mode at $0.01 per AI credit. Only active if the 'AI credit paid usage' policy is enabled on your enterprise or organisation." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/usage-based-billing-for-organizations-and-enterprises#what-happens-if-i-exceed-my-included-ai-credits" /></div>
             <div class="ubb-node-detail">Only after pool is exhausted.</div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="ubb-node @Cls(FlowNode.CostCentre)">
-            <div class="ubb-node-title">4. Cost centre <InfoTip Placement="top" Text="Step 3a (metered): The cost centre's metered budget is checked. If exhausted and 'Stop usage when budget limit is reached' is on, only users in this cost centre are blocked — other cost centres continue unaffected." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/budgets-for-usage-based-billing#cost-center-budget" /></div>
+        <div class="ubb-node @Cls(FlowNode.CostCentre)" role="group" aria-label="Step 4, cost centre budget: @StateText(FlowNode.CostCentre)">
+            <div class="ubb-node-title">@StateIcon(FlowNode.CostCentre)4. Cost centre <InfoTip Placement="top" Text="Step 3a (metered): The cost centre's metered budget is checked. If exhausted and 'Stop usage when budget limit is reached' is on, only users in this cost centre are blocked — other cost centres continue unaffected." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/budgets-for-usage-based-billing#cost-center-budget" /></div>
             <div class="ubb-node-detail">@Fmt(FlowState.CostCenterMeteredRemainingCredits) metered credits left</div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="ubb-node @Cls(FlowNode.Enterprise)">
-            <div class="ubb-node-title">5. Enterprise cap <InfoTip Placement="top" Text="Step 3b (metered): The enterprise-wide metered budget is the final guardrail. 'Lowest remaining headroom wins' — whichever budget runs out first blocks the user. Note: this is not a total spend cap; total bill = license fees + metered charges." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/budgets-for-usage-based-billing#enterprise-budget" /></div>
+        <div class="ubb-node @Cls(FlowNode.Enterprise)" role="group" aria-label="Step 5, enterprise cap: @StateText(FlowNode.Enterprise)">
+            <div class="ubb-node-title">@StateIcon(FlowNode.Enterprise)5. Enterprise cap <InfoTip Placement="top" Text="Step 3b (metered): The enterprise-wide metered budget is the final guardrail. 'Lowest remaining headroom wins' — whichever budget runs out first blocks the user. Note: this is not a total spend cap; total bill = license fees + metered charges." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/budgets-for-usage-based-billing#enterprise-budget" /></div>
             <div class="ubb-node-detail">@Fmt(FlowState.EnterpriseMeteredRemainingCredits) metered credits left</div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="ubb-node @Cls(FlowNode.Result)">
-            <div class="ubb-node-title">Result <InfoTip Placement="left" Text="The final outcome: Free pool usage (no extra cost), Paid usage allowed (metered at $0.01/credit), or Request blocked (ULB or a budget was exhausted). Blocked users remain blocked until the next billing cycle or an admin raises the relevant budget." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/budgets-for-usage-based-billing#what-happens-when-a-user-is-blocked" /></div>
+        <div class="ubb-node @Cls(FlowNode.Result)" role="group" aria-label="Result: @ResultDetail">
+            <div class="ubb-node-title">@StateIcon(FlowNode.Result)Result <InfoTip Placement="left" Text="The final outcome: Free pool usage (no extra cost), Paid usage allowed (metered at $0.01/credit), or Request blocked (ULB or a budget was exhausted). Blocked users remain blocked until the next billing cycle or an admin raises the relevant budget." DocsUrl="https://docs.github.com/en/copilot/concepts/billing/budgets-for-usage-based-billing#what-happens-when-a-user-is-blocked" /></div>
             <div class="ubb-node-detail">@ResultDetail</div>
         </div>
     </div>
@@ -49,6 +49,31 @@
             FlowNodeState.Warn  => "is-warn",
             FlowNodeState.Block => "is-block",
             _                   => ""
+        };
+    }
+
+    /// <summary>Visible state indicator so pass/warn/block is not conveyed by colour alone (WCAG 1.4.1).</summary>
+    private string StateIcon(FlowNode node)
+    {
+        if (!FlowState.NodeStates.TryGetValue(node, out var s)) return "";
+        return s switch
+        {
+            FlowNodeState.Pass  => "✓ ",
+            FlowNodeState.Warn  => "⚠ ",
+            FlowNodeState.Block => "✕ ",
+            _                   => ""
+        };
+    }
+
+    private string StateText(FlowNode node)
+    {
+        if (!FlowState.NodeStates.TryGetValue(node, out var s)) return "idle";
+        return s switch
+        {
+            FlowNodeState.Pass  => "pass",
+            FlowNodeState.Warn  => "warning",
+            FlowNodeState.Block => "blocked",
+            _                   => "idle"
         };
     }
 

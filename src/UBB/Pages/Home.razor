@@ -172,7 +172,17 @@
         {
             <div class="card ubb-card mb-4">
                 <div class="card-body">
-                    <MultiCCPanel />
+                    <ErrorBoundary>
+                        <ChildContent>
+                            <MultiCCPanel />
+                        </ChildContent>
+                        <ErrorContent>
+                            <div class="alert alert-danger" role="alert">
+                                <strong>Something went wrong in the multi-cost-center panel.</strong><br />
+                                <small>Try switching modes or reloading the page. Your other settings are unaffected.</small>
+                            </div>
+                        </ErrorContent>
+                    </ErrorBoundary>
                 </div>
             </div>
         }
@@ -181,7 +191,17 @@
             <div class="card ubb-card mb-4">
                 <div class="card-body">
                     <h2 class="ubb-card-title">Flow diagram</h2>
-                    <FlowDiagram FlowState="State.FlowState" />
+                    <ErrorBoundary>
+                        <ChildContent>
+                            <FlowDiagram FlowState="State.FlowState" />
+                        </ChildContent>
+                        <ErrorContent>
+                            <div class="alert alert-danger" role="alert">
+                                <strong>Something went wrong rendering the flow diagram.</strong><br />
+                                <small>Try resetting the simulation or reloading the page.</small>
+                            </div>
+                        </ErrorContent>
+                    </ErrorBoundary>
                 </div>
             </div>
 

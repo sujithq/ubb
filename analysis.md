@@ -265,10 +265,10 @@ This is the **highest-priority SOLID violation** in the codebase.
 
 ### P4 — Before Public / Production Release
 10. **TD-06** — Move billing constants to `wwwroot/billing-config.json` (Factor III)
-11. **Accessibility** — `role="log"` + `aria-live` on execution log; `aria-label` + colour+icon on flow nodes
-12. **Error boundaries** — `<ErrorBoundary>` around `MultiCCPanel` and results section
-13. **Deploy workflow** — Add `.github/workflows/deploy.yml` for GitHub Pages (Factor V)
-14. **CSP** — Meta `Content-Security-Policy` tag (A05)
+11. ~~**Accessibility**~~ — Done: `role="log"` + `aria-live` already on execution log; flow nodes now have `role="group"`, `aria-label` with state text, and ✓/⚠/✕ icons (not colour-only)
+12. ~~**Error boundaries**~~ — Done: `<ErrorBoundary>` around `MultiCCPanel` and `FlowDiagram` with friendly fallback alerts
+13. ~~**Deploy workflow**~~ — Done: `.github/workflows/deploy.yml` publishes to GitHub Pages with automatic `<base href>` rewrite
+14. ~~**CSP**~~ — Done: CSP meta in `index.html` + `404.html`; `window.ubb` externalized to `js/ubb.js` (no `unsafe-inline` in script-src); `showToast` XSS sink fixed (textContent)
 
 ### P5 — Nice to Have
 15. **OCP** — `ISimulationMode` interface for extensible mode system
