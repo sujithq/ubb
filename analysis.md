@@ -103,7 +103,7 @@ Read-only components receive state via `[Parameter]` (`StatCards` takes `FlowSta
 | Build (0 warnings, `-warnaserror`) | ✅ | Verified 2026-07-09 |
 | Unit tests | ✅ | 145/145 across Engine, Models, Presets, Services, Components (bUnit) |
 | Coverage UBB.Core | ✅ | **99.1% line** (420/424) — threshold 80% |
-| E2E | ✅ | 6/6 Playwright (URL sharing, all modes, CSP-validated) |
+| E2E | ✅ | 10/10 Playwright (URL sharing all modes + happy paths per mode, CSP-validated) |
 | CI on push/PR | ✅ | qa · security · e2e-tests; deploy on `main` |
 | E2E CI reliability | ✅ | Fixed 2026-07-09: lockfile committed for `npm ci`, `--with-deps chromium`, debug log untracked |
 | Branch protection | ❓ | Cannot verify locally — check remote settings |
@@ -158,7 +158,7 @@ Read-only components receive state via `[Parameter]` (`StatCards` takes `FlowSta
 | TD-15 | Medium | **Fixed** | `Home.razor` | URL share/restore extracted to `UrlSharingService` (DI); Home.razor 347 → ~250 lines, `@code` block now orchestration-only |
 | TD-16 | Low | **Fixed** | `js/ubb.js` | 30 s cold-load watchdog: if the boot spinner is still present, swaps in a "taking too long / Reload" message (textContent-only DOM, CSP-safe, shared by index.html + 404.html) |
 | TD-17 | Low | **Fixed** | `UrlStateService` | Deleted `Serialize(SimulationConfig)`/`Deserialize`/`PushToUrl`/`PushFlowStateToUrl`/`LoadFlowStateFromUrl` + the `SimulationConfig` model; tests retargeted to live paths. `DeserializeFlowState` legacy fallback retained |
-| TD-18 | Low | Open | `tests/UBB.E2E` | E2E covers URL sharing only — no E2E for Run/preset/mode-switch happy paths (unit/bUnit tests cover the logic, so risk is low) |
+| TD-18 | Low | **Fixed** | `tests/UBB.E2E` | Added `happy-paths.spec.ts`: Single pass + preset-blocked outcome, Agentic workflow run, Multi-CC preset + run with per-CC diagrams and summary (10 E2E tests total) |
 | TD-19 | Info | Noted | `MultiCCPanel` | Every field edit calls `SetMultiCCState` → `Notify()` → app-wide re-render. Correct and required for URL freshness; revisit only if input latency is ever observed |
 
 ---
@@ -172,7 +172,7 @@ Read-only components receive state via `[Parameter]` (`StatCards` takes `FlowSta
 ### P2 — Opportunistic
 3. ~~**TD-14**~~ — Fixed: `TimeProvider` injection for `AddLog`
 4. ~~**TD-16**~~ — Fixed: 30 s cold-load watchdog in `js/ubb.js`
-5. **TD-18** — One E2E happy-path test per mode (run + assert result node)
+5. ~~**TD-18**~~ — Fixed: 4 happy-path E2E tests added (`happy-paths.spec.ts`)
 
 ### P3 — Verify on remote (not doable locally)
 6. Branch protection: require QA + Security + E2E green before merge to `main`
