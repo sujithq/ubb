@@ -1,20 +1,27 @@
 # UBB Simulator — Deep Analysis Working Document
-*Generated: 2026-07-08 | Reflects current codebase state after test infrastructure and CI setup*
+*Generated: 2026-07-09 | Fresh analysis after full TD-01→TD-13 closure, P4 hardening, and P5 disposition*
 
 ---
 
-## 0. What Changed Since Last Analysis
+## 0. What Changed Since Last Analysis (2026-07-08)
 
 | Area | Before | Now |
 |------|--------|-----|
-| Project structure | Single `UBB.csproj` (Blazor + logic mixed) | 3-project solution: `UBB.Core` (pure C#) · `UBB` (Blazor UI) · `UBB.Tests` (xUnit) |
-| Unit tests | None | 70 tests across 5 classes (100% green) |
-| Coverage | Not measured | 87.9% line / 88% branch on `UBB.Core` |
-| CI gates | None | `qa.yml` (build + test + coverage ≥ 80%) · `security.yml` (CVEs + SRI + Gitleaks) |
-| Local agents | None | `#qa` and `#security` in `.github/agents/` |
-| Copilot instructions | None | `.github/copilot-instructions.md` |
-| Duplicate files | N/A | **Fixed this session** — `src/UBB/Models/` and `src/UBB/Services/` duplicates removed (were causing CS0436 warnings that would have failed `-warnaserror` CI) |
-| `plan.md` | Stale architecture doc | Still stale (tracked as TD-03) |
+| Tech debt register | TD-01…TD-13 open/partial | **All closed** (fixed or consciously dispositioned) |
+| Unit tests | 70 → 138 | **145** (added URL bad-input, Reset semantics, AppState serialization) |
+| Coverage (UBB.Core) | 87.9% line | **99.1% line** (dead models deleted + new tests) |
+| E2E tests | None | **6 Playwright tests** (URL sharing across all 3 modes) + `e2e-tests.yml` CI |
+| URL sharing | `UrlStateService` unwired | Share button + full app-state restore (flow, multi-CC, preset, mode) with legacy fallback + error toast |
+| Multi-CC state | Component-local, bypassed `AppStateService` | Routed through `AppStateService`; `OnChange` sync; URL-restorable |
+| Node-state keys | Magic strings | `FlowNode` enum everywhere |
+| Dead code | 4 dead models, Counter/Weather/NavMenu, stale Bootstrap 5.3.3 (~3.5 MB), weather.json | **All deleted** |
+| Bootstrap | CDN 5.3.8 with SRI | **Vendored locally** (`wwwroot/lib/bootstrap/`), hash-verified against previous SRI pins |
+| CSP | None | `'self'`-only `script-src` meta in `index.html` + `404.html`, CI-enforced |
+| Error boundaries | None | `<ErrorBoundary>` around `MultiCCPanel` and `FlowDiagram` |
+| Accessibility | Colour-only flow nodes | `role="group"` + `aria-label` + ✓/⚠/✕ icons; log already had `role="log"` + `aria-live` |
+| Deployment | Manual | `deploy.yml` → GitHub Pages with `<base href>` rewrite |
+| XSS surface | `showToast` used `innerHTML` interpolation | Fixed — `textContent` DOM construction; helpers externalized to `js/ubb.js` |
+| Docs | README/plan.md stale | Synced (plan.md rewritten as-built; README structure/features/testing updated) |
 
 ---
 
@@ -22,256 +29,151 @@
 
 | Dimension | Score | Trend | Notes |
 |-----------|-------|-------|-------|
-| 12-Factor compliance | 7 / 12 | ↑ | CI added (Factor V), `UBB.Core` extraction improves separation |
-| SOLID adherence | B+ | → | Core engine excellent; UI layer still has SRP/DIP gaps |
-| Production readiness | 70% | ↑ | Testing + CI + agents added; accessibility + error boundaries still missing |
-| Docs / code sync | 65% | ↓ | README still says "6 presets" and omits 5 new components; `plan.md` describes architecture that was never built |
-| Tech debt | Medium | ↓ | CS0436 bug fixed; dead models still present; `UrlStateService` still unwired |
+| 12-Factor compliance | 9 / 12 applicable | ↑ | Vendored deps, deploy pipeline, CSP; config externalization consciously declined |
+| SOLID adherence | A− | ↑ | DIP fixed (TD-01), LSP fixed (FlowNode enum); only residual SRP pressure in `Home.razor` |
+| Production readiness | ~90% | ↑ | All gates automated; remaining gaps are minor (load-failure fallback, branch protection) |
+| Docs / code sync | 95% | ↑ | plan.md as-built, README current; only this document ages |
+| Tech debt | Low | ↓ | Register cleared; 5 new low-severity findings below (TD-14…TD-18) |
 
 ---
 
 ## 2. 12-Factor Analysis
 
-> **Note on scope**: UBB is a pure static Blazor WASM SPA — no server process. Factors IV (backing services), VI (processes), VII (port binding), and VIII (concurrency) are trivially N/A.
+> Factors IV (backing services), VI (processes), VII (port binding), VIII (concurrency) are N/A for a static WASM SPA.
 
 ### Factor I — Codebase ✅
-One repo, one solution, Git-tracked. Three well-scoped projects with no circular references.
-**Remaining gap:** `plan.md` at repo root describes a `BillingEngine.cs` and a 30-day simulation that was never built. This is the most misleading piece of documentation in the repo.
+One repo, 4 projects (`UBB.Core`, `UBB`, `UBB.Tests`, `UBB.E2E`), no circular references. `plan.md` now accurately describes the as-built system.
 
-### Factor II — Dependencies ✅
-All NuGet packages pinned to exact versions. Bootstrap 5 and JS delivered via CDN with SRI hashes. Zero known CVEs across all three projects (verified 2026-07-08).
-**Remaining gap:** CDN availability is a runtime dependency with no fallback. If `jsdelivr.net` is unreachable the app loads blank. Vendoring `wwwroot/lib/` eliminates this single point of failure.
+### Factor II — Dependencies ✅ (improved)
+NuGet pinned; **zero runtime CDN dependencies** — Bootstrap 5.3.8 vendored at `wwwroot/lib/bootstrap/`, downloads hash-verified against the previously pinned SRI values. App loads in air-gapped/CDN-blocked environments. Zero CVEs (verified 2026-07-09).
 
-### Factor III — Config ⚠️
-Billing constants, default guardrail values, and scenario preset data are all hardcoded in C#:
-- `BillingConstants.cs` — credit price, seat costs, promo credit counts (promo ends Sept 2026)
-- `RequestFlowState.cs` — default ULB 2500, pool 390k, etc. baked into property initialisers
-- `ScenarioPresets.cs` — 15 presets with hardcoded credit figures
-**Fix:** `wwwroot/billing-config.json` fetched at startup via `HttpClient`; inject as `IOptions<BillingConfig>` into engine.
+### Factor III — Config ⚠️ (accepted)
+Billing constants remain hardcoded. **Consciously dispositioned** (ex-TD-06): only `CreditValueDollars` is consumed at runtime (one log line); seat costs / promo credits are test-only + doc text. A JSON-config pipeline for one constant is over-engineering. Revisit if seat-cost simulation is built.
 
-### Factor IV — Backing Services N/A
-No databases, queues, or external APIs. All computation is in-browser via WebAssembly.
-`UrlStateService` serialises state to a URL fragment — this is the only persistence mechanism and it is **still not wired to any UI component**.
-
-### Factor V — Build, Release, Run ✅
-`dotnet publish` produces a deterministic static bundle. GitHub Actions CI (`qa.yml`) builds and tests on every push. `security.yml` adds vulnerability scanning weekly.
-**Remaining gap:** No deployment step in CI — `qa.yml` builds and tests but does not publish to GitHub Pages. A `deploy.yml` targeting the `gh-pages` branch is still missing.
-
-### Factor VI — Processes ✅ (N/A)
-
-### Factor VII — Port Binding ✅ (N/A)
-
-### Factor VIII — Concurrency ✅ (N/A)
+### Factor V — Build, Release, Run ✅ (completed)
+Four CI workflows: `qa.yml` (build + tests + coverage ≥ 80%), `security.yml` (CVEs, SRI + CSP audit, Gitleaks), `e2e-tests.yml` (Playwright), `deploy.yml` (GitHub Pages with automatic `<base href>` rewrite).
+**Remaining gap:** branch protection rules requiring green checks cannot be verified locally — confirm on the remote.
 
 ### Factor IX — Disposability ⚠️
-`Home.razor` correctly implements `IDisposable` and unsubscribes `State.OnChange`.
-`MultiCCPanel.razor` holds `MultiCostCenterState` as component-local state — no cleanup needed (WASM GC handles it), but if the component is re-created mid-session the state resets silently with no user warning.
-**Remaining gap:** No loading timeout or error fallback for WASM bundle failures. The spinner runs indefinitely on a cold-load failure.
+`Home.razor` and `MultiCCPanel` correctly implement `IDisposable`/unsubscribe.
+**Remaining gap (TD-16):** WASM cold-load failure still shows an indefinite spinner — no timeout or "try refreshing" fallback.
 
 ### Factor X — Dev/Prod Parity ✅
-No environment-specific code paths. `<base href="/">` is correctly set for root deployment.
+No environment-specific code paths; `deploy.yml` rewrites `<base href>` at publish time rather than requiring divergent source.
 
-### Factor XI — Logs ⚠️
-Log entries are `List<string>` — unstructured, no severity levels, no timestamps on single-user flow logs (multi-CC does have timestamps via `AddLog`). There is no way to export, filter, or correlate logs across simulation runs.
-**Fix:** Introduce `record SimulationLogEntry(string Level, DateTimeOffset Timestamp, string Message)`. `ExecutionLog.razor` renders from this. Enables severity filtering in UI.
+### Factor XI — Logs ⚠️ (accepted)
+`List<string>` with `PASS`/`WARN`/`BLOCK` prefixes (drives log colouring); multi-CC entries carry timestamps. Structured `SimulationLogEntry` was **dispositioned**: it would break the JSON shape of previously shared URLs for an unrequested filtering feature.
+**New note (TD-14):** `MultiCostCenterState.AddLog` uses `DateTime.Now` inside `UBB.Core` — a purity smell in the domain library (tests must avoid asserting timestamps).
 
-### Factor XII — Admin Processes ❌
-No mechanism to update billing constants (e.g. when GitHub changes promo credit amounts post-Sept 2026) without a code change and redeploy.
-**Fix:** `wwwroot/billing-config.json` with a schema version field, fetched at startup.
+### Factor XII — Admin Processes ⚠️ (accepted risk)
+No runtime config update mechanism; follows from the Factor III disposition. Promo-credit doc text will need a source edit after Sept 2026.
 
 ---
 
 ## 3. SOLID Principles
 
-### S — Single Responsibility
+### S — Single Responsibility ⚠️
+| Class / Component | Lines | Verdict |
+|-------------------|-------|---------|
+| `RequestFlowEngine` | 193 | ✅ Pure stateless evaluation |
+| `Home.razor` | **347** | ⚠️ Grew +100 lines this cycle (share button, URL restore, error boundaries). Extraction candidates: URL-restore logic → a `UrlRestoreService`/code-behind; controls column → `ControlsPanel.razor` (TD-15) |
+| `MultiCCPanel.razor` | 267 | ⚠️ Config UI + sync + execution + rendering; manageable but at the ceiling |
+| `AppStateService` | 136 | ✅ Acceptable — state + runs + notifications, cohesive |
+| `UrlStateService` | 124 | ⚠️ Contains a production-dead legacy path (TD-17) |
 
-| Class / Component | Verdict | Issue |
-|-------------------|---------|-------|
-| `RequestFlowEngine` | ✅ | Pure stateless evaluation; 3 public methods each with single clear purpose |
-| `BillingConstants` | ✅ | Constants and two conversion helpers only |
-| `ScenarioPresets` | ✅ | Data only |
-| `AppStateService` | ⚠️ | Manages state + triggers re-renders + applies presets + calls engine + tracks active preset key. Consider extracting `SimulationRunner` |
-| `Home.razor` | ⚠️ | 240-line component: layout, input binding, mode switching, field parsing, preset badge rendering. Manageable now but will grow |
-| `MultiCCPanel.razor` | ⚠️ | Configuration UI + preset selection + simulation execution + result rendering + node state display (~240 lines) |
-| `UBB.Core` as a whole | ✅ | Pure domain logic, no Blazor/UI dependencies |
+### O — Open/Closed ✅ (dispositioned)
+Enum-switch mode dispatch retained deliberately: 3 modes, colocated, compile-time-checked. `ISimulationMode` was assessed as speculative generality.
 
-### O — Open/Closed ⚠️
-Adding a new simulation mode (e.g. Monthly 30-day) requires modifying:
-- `SimulationMode` enum — adding a value ✅ (extension)
-- `Home.razor` — mode tab, conditional rendering blocks ❌ (modification)
-- `AppStateService.Run()` switch ❌ (modification)
+### L — Liskov Substitution ✅ (fixed)
+`Dictionary<FlowNode, FlowNodeState>` everywhere — magic strings eliminated. Single-flow uses 6 nodes, per-CC diagrams 5 (no `User`); the difference is now visible in the type usage rather than implicit strings.
 
-A `ISimulationMode` interface with `Render()` / `Run()` would make new modes additive only.
+### I — Interface Segregation ✅
+Read-only components receive state via `[Parameter]` (`StatCards` takes `FlowState` + optional `MultiCCState`); `PresetPanel` uses `EventCallback`.
 
-### L — Liskov Substitution ⚠️
-Node-state dictionaries (`Dictionary<string, FlowNodeState>`) use magic string keys. The single-user flow uses 6 keys (`user`, `pool`, `paid`, `costCentre`, `enterprise`, `result`); the multi-CC per-CC diagram uses 5 (no `user`). Consumers call `.TryGetValue` defensively but the contract is entirely implicit and undocumented.
-**Fix:** Replace string keys with a `FlowNode` enum. Compile-time safety, no magic strings.
-
-### I — Interface Segregation ✅ (mostly)
-Components that only read state (`StatCards`, `FlowDiagram`, `ExecutionLog`) receive `RequestFlowState` as a `[Parameter]` — correctly separated from the full `AppStateService`.
-**Remaining gap:** `MultiCCPanel` has no parameter interface — it accesses `ScenarioPresets` and `RequestFlowEngine` as static classes directly.
-
-### D — Dependency Inversion ❌ (partially fixed, partially not)
-`MultiCCPanel.razor` calls `RequestFlowEngine.RunMultiCostCenter()` **directly** — it bypasses `AppStateService` entirely. This means:
-- Multi-CC simulation state lives only in local component state (not in `AppStateService`)
-- The multi-CC `MultiCostCenterState` is not accessible from anywhere outside `MultiCCPanel`
-- `StatCards` and other shared components cannot reflect multi-CC state
-- Two parallel execution paths exist with no shared state model
-
-This is the **highest-priority SOLID violation** in the codebase.
-**Fix (TD-01):** Add `AppStateService.MultiCCState`, `RunMultiCostCenter()`, and route execution through the service layer.
+### D — Dependency Inversion ✅ (fixed — was the top violation)
+`MultiCCPanel` now routes everything through `AppStateService` (`SetMultiCCState`, `RunMultiCostCenter`), subscribes to `OnChange`, and adopts URL-restored state via `SyncFromAppState()`. Single execution path; multi-CC state is shareable and observable app-wide.
 
 ---
 
 ## 4. Production Readiness
 
 ### 4.1 Build & CI
-
 | Check | Status | Detail |
 |-------|--------|--------|
-| Build (0 errors, 0 warnings) | ✅ | Verified 2026-07-08 after CS0436 duplicate-type fix |
-| Tests (70/70 pass) | ✅ | `RequestFlowEngineTests` (24) · `AgenticFlowEngineTests` (7) · `MultiCostCenterEngineTests` (20) · `BillingConstantsTests` (10) · `ScenarioPresetsTests` (13) |
-| Coverage UBB.Core | ✅ | 87.9% line / 88% branch (threshold: 80%) |
-| CI on every push | ✅ | `qa.yml` + `security.yml` in `.github/workflows/` |
-| GitHub Pages deployment | ❌ | No `deploy.yml` — publish and gh-pages push is still manual |
-| PR status checks | ⚠️ | Workflows exist but no branch protection rules enforcing them |
+| Build (0 warnings, `-warnaserror`) | ✅ | Verified 2026-07-09 |
+| Unit tests | ✅ | 145/145 across Engine, Models, Presets, Services, Components (bUnit) |
+| Coverage UBB.Core | ✅ | **99.1% line** (420/424) — threshold 80% |
+| E2E | ✅ | 6/6 Playwright (URL sharing, all modes, CSP-validated) |
+| CI on push/PR | ✅ | qa · security · e2e-tests; deploy on `main` |
+| E2E CI reliability | ✅ | Fixed 2026-07-09: lockfile committed for `npm ci`, `--with-deps chromium`, debug log untracked |
+| Branch protection | ❓ | Cannot verify locally — check remote settings |
 
-### 4.2 Coverage Detail
-
-| Class | Line % | Gap / Note |
-|-------|--------|------------|
-| `RequestFlowEngine` | **100%** | All billing paths covered |
-| `ScenarioPresets` | **100%** | All preset keys + outcomes tested |
-| `MultiCCPreset` | **100%** | |
-| `FlowResult` | **100%** | |
-| `RequestFlowState` | **100%** | |
-| `RequestPreset` | **100%** | |
-| `AgenticStep` | **100%** | |
-| `CostCenterBudget` | **80.7%** | `Reset()` method untested |
-| `MultiCostCenterState` | **65.3%** | `Reset()` and `AddLog()` paths partially uncovered |
-| `BillingConstants` | **69.2%** | `CreditsPerSeat` default branch not tested |
-| `CostCenterConfig` | **0%** | Dead model — earmarked for deletion |
-| `DailySnapshot` | **0%** | Dead model — earmarked for deletion |
-| `SimulationConfig` | **0%** | Dead model — earmarked for deletion |
-| `SimulationResult` | **0%** | Dead model — earmarked for deletion |
-| `UserConfig` | **0%** | Dead model — earmarked for deletion |
-
-> The 0% classes are **dead code** (TD-05). Deleting them would raise overall coverage and eliminate noise. Without them: effective coverage is ~97% on active code.
-
-### 4.3 Security
-
+### 4.2 Security
 | Check | Status | Detail |
 |-------|--------|--------|
-| Vulnerable NuGet packages | ✅ | Zero CVEs across all 3 projects (2026-07-08) |
-| SRI on Bootstrap CSS | ✅ | `integrity="sha384-..."` + `crossorigin="anonymous"` |
-| SRI on Bootstrap JS | ✅ | Same |
-| XSS — Blazor auto-encoding | ✅ | All `@variable` bindings auto-encoded; no `MarkupString` usage |
-| Hardcoded secrets | ✅ | Pure client-side; no API keys, no credentials |
-| `UrlStateService.Deserialize` | ⚠️ | Bare `catch {}` silently swallows malformed URL state — no user feedback, no logging |
-| Content Security Policy | ❌ | No CSP meta tag or server header. App relies solely on SRI hashes |
-| Gitleaks scan | ⚠️ | Configured in CI but requires `secrets.GITHUB_TOKEN` — not testable without a remote |
+| Vulnerable NuGet packages | ✅ | Zero CVEs (2026-07-09) |
+| CDN dependencies | ✅ | **None** — Bootstrap vendored, hash-verified |
+| CSP | ✅ | `'self'`-only `script-src` (+ `wasm-unsafe-eval`) in both HTML files; CI-enforced regression guard in `security.yml` |
+| XSS | ✅ | Blazor auto-encoding; `showToast` innerHTML sink fixed (`textContent`); no `MarkupString` on user data |
+| URL-state tampering | ✅ | Malformed hashes: logged to console, warning toast shown, safe default state (covered by 6 bad-input unit tests) |
+| Secrets | ✅ | None; pure client-side |
 
-### 4.4 Accessibility
-
+### 4.3 Accessibility
 | Check | Status | Detail |
 |-------|--------|--------|
-| Mode tabs `role="tablist"` / `role="tab"` / `aria-selected` | ✅ | Correctly implemented in `Home.razor` |
-| Form inputs have `<label for>` | ✅ | All inputs labelled |
-| Flow diagram nodes | ❌ | Pure `<div>` elements — no `role`, no `aria-label`, no text alternative for colour states |
-| Simulation log | ❌ | No `role="log"` or `aria-live="polite"` — screen readers do not announce new results |
-| Colour-only state indicators | ⚠️ | Pass/warn/block are green/yellow/red only — no icon or text for colour-blind users |
-| Keyboard focus on page load | ✅ | **Fixed this session** — `outline:none` on non-interactive elements prevents the `h1` focus-ring bug |
-| `ubb-preset-btn` keyboard nav | ✅ | Uses `<button>` — natively focusable |
+| Mode tabs (`role="tab"`, `aria-selected`) | ✅ | |
+| Form labels | ✅ | All inputs labelled |
+| Flow diagram nodes | ✅ | `role="group"` + `aria-label` with state text; ✓/⚠/✕ icons (not colour-only) |
+| Execution log | ✅ | `role="log"` + `aria-live="polite"` |
+| Multi-CC diagrams | ✅ | Text state labels per node |
+| Keyboard navigation | ✅ | Native `<button>` elements throughout |
 
-### 4.5 Error Handling
-
+### 4.4 Error Handling
 | Check | Status | Detail |
 |-------|--------|--------|
-| Blazor global error UI | ✅ | `blazor-error-ui` div in `index.html` |
-| `<ErrorBoundary>` components | ❌ | None — an unhandled exception in `MultiCCPanel` crashes the full page |
-| Engine input validation | ⚠️ | `EvaluateStep` accepts negative credits; UI parses with fallback but no user-visible validation message |
-| WASM cold-load failure | ❌ | Spinner runs indefinitely; no timeout, no "try refreshing" message |
-
-### 4.6 Performance
-
-| Check | Status | Detail |
-|-------|--------|--------|
-| Re-render scope | ⚠️ | `State.OnChange` triggers full `Home.razor` re-render (all children) on every input change including `SetField` debounce-less |
-| `MultiCCPanel` re-render | ✅ | Local state; explicit `StateHasChanged()` |
-| WASM bundle size | ✅ | Minimal deps — only `Microsoft.AspNetCore.Components.WebAssembly` |
-| CDN assets | ✅ | Bootstrap loaded from CDN with caching headers |
+| Blazor global error UI | ✅ | `blazor-error-ui` div |
+| `<ErrorBoundary>` | ✅ | Around `MultiCCPanel` and `FlowDiagram` with friendly fallbacks |
+| URL restore failure | ✅ | Warning toast + safe defaults |
+| WASM cold-load failure | ❌ | Indefinite spinner — no timeout/fallback (TD-16) |
+| Engine input validation | ⚠️ | UI clamps to ≥ 0; engine itself accepts negatives (UI is the only caller — acceptable) |
 
 ---
 
-## 5. Documentation Sync Audit
+## 5. Documentation Sync
 
-### README.md
-| Section | Status | Issue |
-|---------|--------|-------|
-| Billing model table | ✅ | Accurate |
-| Feature bullets | ❌ | Says "6 scenario presets" — now 15 (6 single-user + 9 multi-CC) |
-| Single-user scenario table | ✅ | 6 rows, matches `RequestPresets` |
-| Multi-CC scenario table | ⚠️ | Shows scenarios 7–15 but numbering doesn't match preset keys; descriptions are approximate |
-| Project structure | ❌ | Missing `UBB.Core/`, `tests/`, `MultiCCPanel.razor`, `MultiCCFlowDiagram.razor`, `MultiCCPreset.cs`, `CostCenterBudget.cs`, `MultiCostCenterState.cs` |
-| `ScenarioPresets.cs` description | ❌ | Still says "6 preset configurations" |
-
-### plan.md
-| Section | Status | Issue |
-|---------|--------|-------|
-| Phase 3 — `BillingEngine.cs` | ❌ | Describes a full 30-day simulation engine that was never built |
-| Phase 4 — Component hierarchy | ❌ | Describes `CostCenterList`, `GlobalSettingsPanel`, `KpiCards` etc. — none exist |
-| Multi-CC mode | ❌ | Not mentioned at all |
-| Tests / CI | ❌ | Not mentioned at all |
+| Document | Status |
+|----------|--------|
+| `plan.md` | ✅ Rewritten as as-built architecture (2026-07-09) |
+| `README.md` | ✅ Features (15 presets, multi-CC, URL sharing), structure, port 5295, testing section |
+| `.github/copilot-instructions.md` | ✅ Vendored-Bootstrap invariant, count-free CI table, deploy row |
+| `.github/agents/qa.md` / `security.md` | ✅ Count-free; security checks reflect vendored + CSP-mandatory state |
 
 ---
 
-## 6. Tech Debt Register (current state)
+## 6. Tech Debt Register (fresh — previous TD-01…TD-13 all closed, see git history)
 
 | ID | Severity | Status | Location | Issue |
 |----|----------|--------|----------|-------|
-| TD-01 | **High** | **Fixed** | `MultiCCPanel.razor` | Routes through `AppStateService.RunMultiCostCenter()`; subscribes to `OnChange` to sync URL-restored state; all edits call `SetMultiCCState()` |
-| TD-02 | **High** | Open | `UrlStateService.cs` | Fully implemented, never wired to UI — dead feature or forgotten Share button |
-| TD-03 | **High** | **Fixed** | `plan.md` | Rewritten as accurate as-built architecture doc (solution layout, billing flow, state management, quality gates) |
-| TD-04 | Medium | **Fixed** | All node-state dicts | `FlowNode` enum used throughout — no magic string keys anywhere in the codebase |
-| TD-05 | Medium | **Fixed** | ~~`DailySnapshot`, `SimulationResult`, `UserConfig`, `CostCenterConfig`~~ | Deleted; `SimulationConfig.CostCenters` property removed; 0% noise eliminated |
-| TD-06 | Medium | **Closed — not warranted** | `BillingConstants.cs` | Re-evaluated 2026-07-09: only `CreditValueDollars` is consumed at runtime (one log line); seat costs / promo credits are test-only + doc text. A JSON-config pipeline for one constant is over-engineering. Revisit only if seat-cost simulation is built. |
-| TD-07 | Medium | **Fixed** | `MultiCostCenterState.Reset()` | Uses `InitialMeteredBudget` / `InitialPoolRemainingCredits` — restored correctly per-CC and org-level |
-| TD-08 | Medium | **Fixed** | `README.md` | Features (15 presets, multi-CC, URL sharing), project structure (3 projects + tests + CI), port, and testing section updated |
-| TD-09 | Low | **Fixed** | `Home.razor` URL restore | Shows warning toast when hash is present but neither format can be decoded |
-| TD-10 | Low | **Fixed** | `AppStateService` | `SetUserType`, `SetMode`, `Reset` all clear `ActivePresetKey` inline — preset badge correctly invalidated |
-| TD-11 | Low | **Fixed** | `app.css` | `outline:none` was scoped to all `div:focus`; now scoped to non-interactive elements |
-| TD-12 | Low | **Fixed** | `src/UBB/Models/`, `src/UBB/Services/` | CS0436 duplicate type warnings from files not removed after UBB.Core extraction |
-| TD-13 | Low | Open | `MultiCostCenterState.cs` | `Reset()` comment says "Default metered budget" hardcoded at `200_000` — different from the presets |
+| TD-14 | Low | Open | `MultiCostCenterState.AddLog` | `DateTime.Now` inside the pure domain library — injectable clock or caller-supplied timestamp would restore purity and full test determinism |
+| TD-15 | Medium | Open | `Home.razor` (347 lines) | SRP pressure: URL-restore logic and the controls column are extraction candidates before the next feature lands |
+| TD-16 | Low | Open | `index.html` | WASM cold-load failure leaves an indefinite spinner — add a JS timeout that swaps in a "reload" message |
+| TD-17 | Low | Open | `UrlStateService` | Legacy `Serialize(SimulationConfig)` / `Deserialize` / `PushToUrl` are production-dead (test-only); `SimulationConfig` model exists solely for them. Note: the *actual* legacy share-URL fallback is `DeserializeFlowState` — that one must stay |
+| TD-18 | Low | Open | `tests/UBB.E2E` | E2E covers URL sharing only — no E2E for Run/preset/mode-switch happy paths (unit/bUnit tests cover the logic, so risk is low) |
+| TD-19 | Info | Noted | `MultiCCPanel` | Every field edit calls `SetMultiCCState` → `Notify()` → app-wide re-render. Correct and required for URL freshness; revisit only if input latency is ever observed |
 
 ---
 
 ## 7. Prioritised Action Plan
 
-### P1 — Fix Now (build / correctness)
-*(Build is currently clean — these are the next highest-risk items)*
-1. **TD-10** — `SetUserType` / `SetMode` do not clear `ActivePresetKey`; preset badge shows stale state
-2. **TD-07** — `Reset()` on `MultiCostCenterState` uses hardcoded budget value
-3. **TD-09** — `UrlStateService` bare catch; at minimum log to browser console
+### P1 — Before next feature
+1. **TD-15** — Extract `Home.razor` URL-restore logic (and optionally the controls column) — largest file, still growing
+2. **TD-17** — Delete the production-dead `SimulationConfig` serialize path + its tests (keep `DeserializeFlowState` legacy fallback)
 
-### P2 — Fix Before Next Feature (SOLID / architecture)
-4. ~~**TD-01**~~ — Fixed: multi-CC now routes through `AppStateService`; subscribes to `OnChange`; all edits publish state
-5. ~~**TD-04**~~ — Already fixed: `FlowNode` enum used everywhere
-6. **TD-02** — Wire `UrlStateService` to a Share button or delete it
+### P2 — Opportunistic
+3. **TD-14** — Timestamp injection for `AddLog`
+4. **TD-16** — Cold-load timeout fallback in `index.html`
+5. **TD-18** — One E2E happy-path test per mode (run + assert result node)
 
-### P3 — Clean-Up Sprint
-7. ~~**TD-05**~~ — Fixed: deleted `DailySnapshot`, `SimulationResult`, `UserConfig`, `CostCenterConfig`; removed `SimulationConfig.CostCenters`
-8. ~~**TD-03**~~ — Fixed: `plan.md` rewritten as accurate as-built architecture doc
-9. ~~**TD-08**~~ — Fixed: README features, structure, port, and testing section updated
-
-### P4 — Before Public / Production Release
-10. ~~**TD-06**~~ — Closed as not warranted: only one billing constant is consumed at runtime; config externalization would be over-engineering (see register)
-11. ~~**Accessibility**~~ — Done: `role="log"` + `aria-live` already on execution log; flow nodes now have `role="group"`, `aria-label` with state text, and ✓/⚠/✕ icons (not colour-only)
-12. ~~**Error boundaries**~~ — Done: `<ErrorBoundary>` around `MultiCCPanel` and `FlowDiagram` with friendly fallback alerts
-13. ~~**Deploy workflow**~~ — Done: `.github/workflows/deploy.yml` publishes to GitHub Pages with automatic `<base href>` rewrite
-14. ~~**CSP**~~ — Done: CSP meta in `index.html` + `404.html`; `window.ubb` externalized to `js/ubb.js` (no `unsafe-inline` in script-src); `showToast` XSS sink fixed (textContent)
-
-### P5 — Nice to Have
-15. ~~**OCP**~~ — Closed as not warranted (2026-07-09): per-mode surface is 3 tab buttons + 2 render blocks + a 2-branch `Run()` dispatch, all colocated and compile-time-checked. An `ISimulationMode` registry with `RenderFragment` indirection would add complexity for a 4th mode that isn't planned — speculative generality. Revisit if a new mode is actually requested.
-16. ~~**Factor XI**~~ — Closed as not warranted (2026-07-09): the PASS/WARN/BLOCK prefix convention already encodes severity (and drives `ExecutionLog` colouring); multi-CC logs carry timestamps. Restructuring `Logs` would break the JSON shape of every previously shared URL for a filtering feature nobody requested. Revisit if log export/filtering becomes a requirement.
-17. ~~**Performance**~~ — Closed as not warranted (2026-07-09): leaf components are lightweight and Blazor diffing keeps re-renders cheap at this scale; manual `ShouldRender()` suppression adds stale-UI risk with no measurable gain. Revisit only if profiling shows a real bottleneck.
-18. ~~**CDN vendoring**~~ — Done 2026-07-09: Bootstrap 5.3.8 vendored to `wwwroot/lib/bootstrap/` (downloads verified against the previously-pinned SRI hashes); CSP tightened to `'self'`-only sources; zero runtime CDN dependencies remain
+### P3 — Verify on remote (not doable locally)
+6. Branch protection: require QA + Security + E2E green before merge to `main`
+7. Confirm GitHub Pages is configured for `deploy.yml` (Settings → Pages → GitHub Actions source); set `PAGES_ROOT=true` repo variable if deploying to a user/org root site
