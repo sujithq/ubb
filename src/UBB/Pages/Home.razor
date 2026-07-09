@@ -1,8 +1,7 @@
 ﻿@page "/"
 @inject AppStateService State
 @inject IJSRuntime JS
-@inject NavigationManager Nav
-@inject UrlStateService UrlService
+@inject UrlSharingService UrlSharing
 @implements IDisposable
 
 <PageTitle>GitHub Copilot UBB Simulator</PageTitle>
@@ -253,94 +252,20 @@
         if (firstRender && !_stateLoaded)
         {
             _stateLoaded = true;
-            
-            try
+
+            if (await UrlSharing.TryRestoreFromUrlAsync())
             {
-                // Get hash from JavaScript using helper function
-                var hash = await JS.InvokeAsync<string>("ubb.getHash");
-                if (!string.IsNullOrEmpty(hash) && hash.StartsWith("#"))
-                {
-                    var encoded = hash[1..]; // Remove leading #
-                    if (!string.IsNullOrEmpty(encoded))
-                    {
-                        // Try new app state format first (includes multi-CC)
-                        var (flowState, multiCCState, presetKey, mode) = UrlService.DeserializeAppState(encoded);
-                        if (flowState != null)
-                        {
-                            // Restore complete app state without notifications (to avoid double-render)
-                            State.LoadFlowStateWithoutNotifying(flowState);
-                            State.SetModeWithoutNotifying(mode);  // Set mode AFTER loading state to preserve it
-                            if (multiCCState != null)
-                            {
-                                State.LoadMultiCCStateWithoutNotifying(multiCCState);
-                            }
-                            if (!string.IsNullOrEmpty(presetKey))
-                            {
-                                State.ActivePresetKey = presetKey;
-                            }
-                            // Manually trigger re-render after state is loaded
-                            await Task.Delay(10);
-                            StateHasChanged();
-                        }
-                        else
-                        {
-                            // Fallback to legacy flow state format (TD-02 backward compatibility)
-                            var (legacyFlowState, legacyPresetKey) = UrlService.DeserializeFlowState(encoded);
-                            if (legacyFlowState != null)
-                            {
-                                State.LoadFlowStateWithoutNotifying(legacyFlowState);
-                                if (!string.IsNullOrEmpty(legacyPresetKey))
-                                {
-                                    State.ActivePresetKey = legacyPresetKey;
-                                }
-                                await Task.Delay(10);
-                                StateHasChanged();
-                            }
-                            else
-                            {
-                                // Both formats failed — the hash is present but unreadable
-                                await JS.InvokeVoidAsync("ubb.showToast", "⚠️ Could not restore shared state — the link may be invalid or incomplete.");
-                            }
-                        }
-                    }
-                }
+                await Task.Delay(10); // let the initial render settle before re-rendering with restored state
+                StateHasChanged();
             }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"[Home] Failed to load state from URL: {ex.Message}");
-            }
-            
+
             await JS.InvokeVoidAsync("ubb.initPopovers");
         }
     }
 
     public void Dispose() => State.OnChange -= StateHasChanged;
 
-    private async Task ShareSimulation()
-    {
-        // Serialize complete app state: flow + multi-CC + preset + mode
-        var encoded = UrlService.SerializeAppState(
-            State.FlowState,
-            State.MultiCCState,
-            State.ActivePresetKey,
-            State.FlowState.Mode);
-        var baseUri = Nav.Uri.Split('#')[0]; // Remove any existing hash
-        var shareUrl = $"{baseUri}#{encoded}";
-        
-        // Update URL bar to reflect shareable state
-        Nav.NavigateTo(shareUrl, forceLoad: false);
-        
-        // Copy to clipboard
-        try
-        {
-            await JS.InvokeVoidAsync("navigator.clipboard.writeText", shareUrl);
-            await JS.InvokeVoidAsync("ubb.showToast", "Share link copied to clipboard!");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to copy to clipboard: {ex.Message}");
-        }
-    }
+    private Task ShareSimulation() => UrlSharing.ShareAsync();
 
     private void Run()
     {

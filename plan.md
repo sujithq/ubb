@@ -47,7 +47,8 @@ UBB.sln
 │   │   └── InfoTip.razor             Bootstrap popover help icons with docs links
 │   └── Services/
 │       ├── AppStateService.cs        Single source of truth; OnChange event; all runs route here
-│       └── UrlStateService.cs        Base64URL (de)serialization for share links
+│       ├── UrlStateService.cs        Base64URL (de)serialization for share links
+│       └── UrlSharingService.cs      Share/restore coordinator (URL bar, clipboard, toasts)
 │
 ├── tests/UBB.Tests/       xUnit + FluentAssertions + bUnit (145 tests)
 │   ├── Engine/                       RequestFlowEngine, Agentic, MultiCC, BillingConstants

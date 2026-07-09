@@ -9,5 +9,6 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddSingleton<AppStateService>();
 builder.Services.AddSingleton<UrlStateService>();
+builder.Services.AddSingleton<UrlSharingService>();
 
 await builder.Build().RunAsync();
