@@ -234,7 +234,7 @@ This is the **highest-priority SOLID violation** in the codebase.
 | TD-03 | **High** | **Fixed** | `plan.md` | Rewritten as accurate as-built architecture doc (solution layout, billing flow, state management, quality gates) |
 | TD-04 | Medium | **Fixed** | All node-state dicts | `FlowNode` enum used throughout — no magic string keys anywhere in the codebase |
 | TD-05 | Medium | **Fixed** | ~~`DailySnapshot`, `SimulationResult`, `UserConfig`, `CostCenterConfig`~~ | Deleted; `SimulationConfig.CostCenters` property removed; 0% noise eliminated |
-| TD-06 | Medium | Open | `BillingConstants.cs` | Promo credit values hardcoded; promo period expires Sept 2026 — no config mechanism |
+| TD-06 | Medium | **Closed — not warranted** | `BillingConstants.cs` | Re-evaluated 2026-07-09: only `CreditValueDollars` is consumed at runtime (one log line); seat costs / promo credits are test-only + doc text. A JSON-config pipeline for one constant is over-engineering. Revisit only if seat-cost simulation is built. |
 | TD-07 | Medium | **Fixed** | `MultiCostCenterState.Reset()` | Uses `InitialMeteredBudget` / `InitialPoolRemainingCredits` — restored correctly per-CC and org-level |
 | TD-08 | Medium | **Fixed** | `README.md` | Features (15 presets, multi-CC, URL sharing), project structure (3 projects + tests + CI), port, and testing section updated |
 | TD-09 | Low | **Fixed** | `Home.razor` URL restore | Shows warning toast when hash is present but neither format can be decoded |
@@ -264,7 +264,7 @@ This is the **highest-priority SOLID violation** in the codebase.
 9. ~~**TD-08**~~ — Fixed: README features, structure, port, and testing section updated
 
 ### P4 — Before Public / Production Release
-10. **TD-06** — Move billing constants to `wwwroot/billing-config.json` (Factor III)
+10. ~~**TD-06**~~ — Closed as not warranted: only one billing constant is consumed at runtime; config externalization would be over-engineering (see register)
 11. ~~**Accessibility**~~ — Done: `role="log"` + `aria-live` already on execution log; flow nodes now have `role="group"`, `aria-label` with state text, and ✓/⚠/✕ icons (not colour-only)
 12. ~~**Error boundaries**~~ — Done: `<ErrorBoundary>` around `MultiCCPanel` and `FlowDiagram` with friendly fallback alerts
 13. ~~**Deploy workflow**~~ — Done: `.github/workflows/deploy.yml` publishes to GitHub Pages with automatic `<base href>` rewrite
@@ -274,4 +274,4 @@ This is the **highest-priority SOLID violation** in the codebase.
 15. **OCP** — `ISimulationMode` interface for extensible mode system
 16. **Factor XI** — `SimulationLogEntry` record with `Level` + `Timestamp`
 17. **Performance** — `ShouldRender()` overrides on leaf components
-18. **CDN vendoring** — Move Bootstrap to `wwwroot/lib/` to eliminate CDN dependency at runtime
+18. **CDN vendoring** — Move Bootstrap to `wwwroot/lib/` to eliminate CDN dependency at runtime. *Note 2026-07-09: the stale template-shipped Bootstrap 5.3.3 in `wwwroot/lib/` (~3.5 MB, unreferenced) and `sample-data/weather.json` were deleted; vendoring 5.3.8 to replace the CDN remains optional*
