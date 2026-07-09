@@ -71,9 +71,11 @@ jobs:
           FAIL=0
           for file in src/UBB/wwwroot/index.html src/UBB/wwwroot/404.html; do
             echo "── $file ──"
-            # Every external <script> and <link rel=stylesheet> must have an integrity attribute
+            # Every external <script> and <link rel=stylesheet> must have an integrity attribute.
+            # '|| true' — with zero CDN references (Bootstrap is vendored) grep exits 1,
+            # which would abort the script under bash -e.
             MISSING=$(grep -E '<(script|link)[^>]+(cdn\.|jsdelivr\.|unpkg\.)[^>]+>' "$file" \
-                      | grep -v 'integrity=')
+                      | grep -v 'integrity=' || true)
             if [ -n "$MISSING" ]; then
               echo "❌ Missing SRI integrity attribute:"
               echo "$MISSING"
