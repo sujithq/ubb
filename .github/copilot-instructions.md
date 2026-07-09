@@ -71,8 +71,9 @@ Agents are defined in `.github/agents/`. Do not consider a change complete until
 
 | Workflow | File | What it checks |
 |----------|------|----------------|
-| **QA** | `.github/workflows/qa.yml` | Build (warnings as errors) · Tests (141 unit tests) · Coverage ≥ 80% (UBB.Core) |
-| **Security** | `.github/workflows/security.yml` | Vulnerable NuGet packages · Roslyn analyzers · SRI integrity audit · Gitleaks secret scan |
+| **QA** | `.github/workflows/qa.yml` | Build (warnings as errors) · Full unit test suite · Coverage ≥ 80% (UBB.Core) |
+| **Security** | `.github/workflows/security.yml` | Vulnerable NuGet packages · Roslyn analyzers · SRI + CSP audit · Gitleaks secret scan |
 | **E2E** | `.github/workflows/e2e-tests.yml` | URL sharing across all modes (Single, Agentic, Multi-CC) · Preset preservation · State restoration · URL format validation |
+| **Deploy** | `.github/workflows/deploy.yml` | Publishes to GitHub Pages on push to `main` (with automatic `<base href>` rewrite) |
 
-All three workflows **must be green** before merging to `main`.
+QA, Security, and E2E **must be green** before merging to `main`.

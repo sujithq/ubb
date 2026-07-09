@@ -2,7 +2,7 @@
 name: qa
 description: >
   QA gate for the UBB Simulator. Builds the solution (warnings-as-errors),
-  runs all 70 unit tests, and checks that UBB.Core line coverage stays ≥ 80%.
+  runs the full unit test suite, and checks that UBB.Core line coverage stays ≥ 80%.
   Run this after every code change before considering the work complete.
 tools:
   - run_in_terminal
@@ -55,7 +55,7 @@ Then read `coverage/report/Summary.txt` and extract the `Line coverage:` value.
 ## QA Report — <timestamp>
 
 ### Build      ✅ / ❌
-### Tests      ✅ 70/70 passed  /  ❌ N failed
+### Tests      ✅ N/N passed  /  ❌ N failed
 ### Coverage   ✅ XX.X% (≥ 80%)  /  ❌ XX.X% (< 80%)
 
 <details if any step failed>

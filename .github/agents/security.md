@@ -35,11 +35,11 @@ dotnet list tests/UBB.Tests/UBB.Tests.csproj package --vulnerable
 
 Read `src/UBB/wwwroot/index.html` and `src/UBB/wwwroot/404.html`.
 
-Verify that **every** external `<script src="...">` and `<link rel="stylesheet" href="...">` that loads from a CDN (jsdelivr, unpkg, cdnjs, etc.) has **both**:
+Bootstrap is **vendored locally** (`wwwroot/lib/bootstrap/`) — the expected state is **zero** external CDN references. If any external `<script src="...">` or `<link rel="stylesheet" href="...">` loading from a CDN (jsdelivr, unpkg, cdnjs, etc.) has been (re)introduced, it must have **both**:
 - `integrity="sha384-..."` attribute
 - `crossorigin="anonymous"` attribute
 
-**Pass:** All CDN resources have SRI hashes.  
+**Pass:** No CDN references, or every CDN resource has SRI hashes.  
 **Fail:** List every tag missing `integrity` or `crossorigin`. This is a **hard blocker** (A08 — Software and Data Integrity Failures).
 
 ---
@@ -86,10 +86,10 @@ Review each match. A bare `catch {}` that discards exceptions can hide security-
 
 ## Check 6 — Content Security Policy (A05)
 
-Read `src/UBB/wwwroot/index.html` and check for a `<meta http-equiv="Content-Security-Policy">` tag.
+Read `src/UBB/wwwroot/index.html` **and** `src/UBB/wwwroot/404.html` and check for a `<meta http-equiv="Content-Security-Policy">` tag in each.
 
-**Pass:** CSP meta tag present and restricts `script-src`, `style-src`, `default-src`.  
-**Warn:** No CSP present. The app relies solely on SRI hashes. Recommend adding a meta CSP tag.
+**Pass:** CSP meta tag present in both files, `script-src` is `'self' 'wasm-unsafe-eval'` with **no remote origins**, and `default-src 'self'` is set.  
+**Fail:** CSP missing from either file, or `script-src` allows a remote origin — the app is fully self-hosted and must stay that way.
 
 ---
 
