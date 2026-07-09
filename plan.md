@@ -127,5 +127,6 @@ dotnet publish src/UBB/UBB.csproj -c Release -o publish
 
 ## Known cleanup candidates
 
-- `Pages/Counter.razor` and `Pages/Weather.razor` — Blazor template leftovers, not linked from navigation.
 - `SimulationConfig` + legacy `Serialize`/`Deserialize`/`PushToUrl` in `UrlStateService` — superseded by `SerializeAppState`; kept for backward-compatible URL decoding.
+
+> `Pages/Counter.razor`, `Pages/Weather.razor`, and the unused `Layout/NavMenu.razor` template leftovers were deleted on 2026-07-09.

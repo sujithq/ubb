@@ -236,7 +236,7 @@ This is the **highest-priority SOLID violation** in the codebase.
 | TD-05 | Medium | **Fixed** | ~~`DailySnapshot`, `SimulationResult`, `UserConfig`, `CostCenterConfig`~~ | Deleted; `SimulationConfig.CostCenters` property removed; 0% noise eliminated |
 | TD-06 | Medium | Open | `BillingConstants.cs` | Promo credit values hardcoded; promo period expires Sept 2026 — no config mechanism |
 | TD-07 | Medium | **Fixed** | `MultiCostCenterState.Reset()` | Uses `InitialMeteredBudget` / `InitialPoolRemainingCredits` — restored correctly per-CC and org-level |
-| TD-08 | Medium | Open | `README.md` | Feature count, project structure, and preset counts are stale |
+| TD-08 | Medium | **Fixed** | `README.md` | Features (15 presets, multi-CC, URL sharing), project structure (3 projects + tests + CI), port, and testing section updated |
 | TD-09 | Low | **Fixed** | `Home.razor` URL restore | Shows warning toast when hash is present but neither format can be decoded |
 | TD-10 | Low | **Fixed** | `AppStateService` | `SetUserType`, `SetMode`, `Reset` all clear `ActivePresetKey` inline — preset badge correctly invalidated |
 | TD-11 | Low | **Fixed** | `app.css` | `outline:none` was scoped to all `div:focus`; now scoped to non-interactive elements |
@@ -261,7 +261,7 @@ This is the **highest-priority SOLID violation** in the codebase.
 ### P3 — Clean-Up Sprint
 7. ~~**TD-05**~~ — Fixed: deleted `DailySnapshot`, `SimulationResult`, `UserConfig`, `CostCenterConfig`; removed `SimulationConfig.CostCenters`
 8. ~~**TD-03**~~ — Fixed: `plan.md` rewritten as accurate as-built architecture doc
-9. **TD-08** — Update README features list, project structure table, preset count
+9. ~~**TD-08**~~ — Fixed: README features, structure, port, and testing section updated
 
 ### P4 — Before Public / Production Release
 10. **TD-06** — Move billing constants to `wwwroot/billing-config.json` (Factor III)

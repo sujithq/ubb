@@ -31,9 +31,11 @@ Configure billing guardrails and observe how a single request — or a multi-ste
 ## Features
 
 - **Request flow simulator** — single request or 5-step agentic workflow (plan → context → implement → test → review)
+- **Multi-cost-center mode** — N cost centers competing for shared pool and enterprise cap, with per-CC flow diagrams
 - **Live flow diagram** — 6 nodes colour-coded pass / warn / block in real time
 - **Execution log** — decision trail showing exactly which guardrail fired and why
-- **6 scenario presets** — Normal dev, Power user spike, Architect override, Pool exhaustion, Cost centre block, Enterprise hard stop
+- **15 scenario presets** — 6 single-user + 9 multi-cost-center scenarios
+- **URL sharing** — Share button encodes the full simulation state (mode, preset, budgets, cost centers) into a copyable link
 - **Hover tooltips** — every label and flow node links to the relevant GitHub docs section
 - **Standard user vs Architect override** — switches between ULB and individual budget mode
 
@@ -87,7 +89,7 @@ cd src/UBB
 dotnet run
 ```
 
-Open http://localhost:5000 in your browser.
+Open http://localhost:5295 in your browser.
 
 ### Hot reload
 
@@ -95,6 +97,19 @@ Open http://localhost:5000 in your browser.
 cd src/UBB
 dotnet watch
 ```
+
+## Testing
+
+```bash
+# Unit tests (xUnit + FluentAssertions + bUnit — 145 tests)
+dotnet test tests/UBB.Tests/
+
+# E2E tests (Playwright — URL sharing across all simulation modes)
+./run-e2e-tests.ps1        # Windows
+./run-e2e-tests.sh         # macOS / Linux
+```
+
+CI runs three workflows on every push and PR: **QA** (build + tests + coverage ≥ 80%), **Security** (CVE scan, SRI audit, secret scan), and **E2E** (Playwright).
 
 ## Deploy to GitHub Pages
 
@@ -116,30 +131,41 @@ The `wwwroot/404.html` (identical to `index.html`) handles direct-link refreshes
 
 ```
 .
-├── plan.md                   ← Architecture & billing model decisions
+├── plan.md                   ← As-built architecture doc
+├── analysis.md               ← 12-factor / SOLID / tech-debt working document
 ├── src/
-│   └── UBB/
-│       ├── Models/           ← LicenseType, UserConfig, CostCenterConfig,
-│       │                        SimulationConfig, RequestFlowState, …
+│   ├── UBB.Core/             ← Pure C# domain library (no Blazor dependencies)
+│   │   ├── Models/           ← RequestFlowState, MultiCostCenterState, CostCenterBudget,
+│   │   │                        FlowResult, FlowNode, RequestPreset, MultiCCPreset, …
+│   │   └── Services/
+│   │       ├── RequestFlowEngine.cs   ← stateless engine: single, agentic, multi-CC
+│   │       ├── BillingConstants.cs    ← credit values, seat costs, promo amounts
+│   │       └── ScenarioPresets.cs     ← 15 preset configurations (6 single + 9 multi-CC)
+│   └── UBB/                  ← Blazor WASM app (UI only; references UBB.Core)
 │       ├── Services/
-│       │   ├── BillingConstants.cs    ← credit values, seat costs
-│       │   ├── RequestFlowEngine.cs   ← C# port of the JS evaluateStep engine
-│       │   ├── AppStateService.cs     ← singleton state + event bus
-│       │   ├── UrlStateService.cs     ← Base64Url encode/decode for URL sharing
-│       │   └── ScenarioPresets.cs     ← 6 preset configurations
+│       │   ├── AppStateService.cs     ← single source of truth + OnChange event bus
+│       │   └── UrlStateService.cs     ← Base64URL encode/decode for URL sharing
 │       ├── Components/
 │       │   ├── InfoTip.razor          ← ⓘ popover with optional docs link
-│       │   ├── StatCards.razor        ← 4 live metric cards
+│       │   ├── StatCards.razor        ← live metric cards
 │       │   ├── FlowDiagram.razor      ← 6-node billing flow diagram
+│       │   ├── MultiCCFlowDiagram.razor ← per-CC 5-node diagram
+│       │   ├── MultiCCPanel.razor     ← multi-CC configuration + simulation
 │       │   ├── ExecutionLog.razor     ← colour-coded decision trail
 │       │   ├── PresetPanel.razor      ← scenario preset buttons
 │       │   └── AgenticWorkflow.razor  ← editable 5-step agentic workflow
-│       ├── Pages/Home.razor           ← single-page simulator UI
+│       ├── Pages/Home.razor           ← single-page simulator UI + URL restore
 │       └── wwwroot/
-│           ├── index.html             ← Bootstrap 5.3.8 CDN, window.ubb helpers
+│           ├── index.html             ← Bootstrap 5.3.8 CDN (SRI), window.ubb helpers
 │           ├── 404.html               ← SPA fallback for GitHub Pages
 │           ├── .nojekyll              ← prevents Jekyll processing
 │           └── css/app.css            ← UBB-specific styles
+├── tests/
+│   ├── UBB.Tests/            ← xUnit + FluentAssertions + bUnit (145 tests)
+│   └── UBB.E2E/              ← Playwright E2E tests (URL sharing)
+├── .github/
+│   ├── workflows/            ← qa.yml · security.yml · e2e-tests.yml
+│   └── agents/               ← #qa and #security local agents
 └── UBB.slnx
 ```
 
