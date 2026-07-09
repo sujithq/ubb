@@ -1,7 +1,7 @@
 node_modules/
-package-lock.json
 npm-debug.log
 playwright-report/
 test-results/
+test-output.log
 .env.local
 .DS_Store
