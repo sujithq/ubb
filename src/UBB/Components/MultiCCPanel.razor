@@ -1,5 +1,6 @@
 @using UBB.Models
 @using UBB.Services
+@implements IDisposable
 
 <div class="card card-ubb">
     <div class="card-header bg-primary text-white">
@@ -175,12 +176,42 @@
     private MultiCostCenterState? CurrentState;
     private string? _activePresetKey;
 
+    protected override void OnInitialized()
+    {
+        AppStateService.OnChange += OnAppStateChanged;
+        // Pick up any state restored from a shared URL before first render
+        SyncFromAppState();
+    }
+
+    public void Dispose() => AppStateService.OnChange -= OnAppStateChanged;
+
+    private void OnAppStateChanged()
+    {
+        SyncFromAppState();
+        StateHasChanged();
+    }
+
+    private void SyncFromAppState()
+    {
+        // If AppState holds a MultiCCState (e.g. restored from URL) that we haven't seen yet, adopt it.
+        if (AppStateService.MultiCCState != null && AppStateService.MultiCCState != CurrentState)
+        {
+            CurrentState = AppStateService.MultiCCState;
+            // Sync the active preset key only when it belongs to a multi-CC preset
+            if (AppStateService.ActivePresetKey != null &&
+                ScenarioPresets.MultiCCPresets.Any(p => p.Key == AppStateService.ActivePresetKey))
+            {
+                _activePresetKey = AppStateService.ActivePresetKey;
+            }
+        }
+    }
+
     private void SelectPreset(MultiCCPreset preset)
     {
         CurrentState = MultiCostCenterState.CreateDefault();
         preset.ApplyTo(CurrentState);
         _activePresetKey = preset.Key;
-        StateHasChanged();
+        AppStateService.SetMultiCCState(CurrentState, preset.Key);
     }
 
     private void UpdatePool(ChangeEventArgs e)
@@ -188,7 +219,8 @@
         if (CurrentState == null) return;
         if (int.TryParse(e.Value?.ToString() ?? "0", out var v))
             CurrentState.PoolRemainingCredits = v;
-        _activePresetKey = null; // manual edit clears preset label
+        _activePresetKey = null;
+        AppStateService.SetMultiCCState(CurrentState);
     }
 
     private void UpdateEnterprise(ChangeEventArgs e)
@@ -196,6 +228,7 @@
         if (CurrentState == null) return;
         if (int.TryParse(e.Value?.ToString() ?? "0", out var v))
             CurrentState.EnterpriseMeteredRemainingCredits = v;
+        AppStateService.SetMultiCCState(CurrentState);
     }
 
     private void UpdateRequestCredits(ChangeEventArgs e)
@@ -203,12 +236,14 @@
         if (CurrentState == null) return;
         if (int.TryParse(e.Value?.ToString() ?? "2000", out var v))
             CurrentState.RequestCreditsPerCC = v;
+        AppStateService.SetMultiCCState(CurrentState);
     }
 
     private void UpdateCCName(int idx, ChangeEventArgs e)
     {
         if (CurrentState == null || idx < 0 || idx >= CurrentState.CostCenters.Count) return;
         CurrentState.CostCenters[idx].Name = e.Value?.ToString() ?? "";
+        AppStateService.SetMultiCCState(CurrentState);
     }
 
     private void UpdateCCUserCount(int idx, ChangeEventArgs e)
@@ -216,6 +251,7 @@
         if (CurrentState == null || idx < 0 || idx >= CurrentState.CostCenters.Count) return;
         if (int.TryParse(e.Value?.ToString() ?? "1", out var v))
             CurrentState.CostCenters[idx].UserCount = v;
+        AppStateService.SetMultiCCState(CurrentState);
     }
 
     private void UpdateCCBudget(int idx, ChangeEventArgs e)
@@ -224,28 +260,29 @@
         if (int.TryParse(e.Value?.ToString() ?? "0", out var v))
         {
             CurrentState.CostCenters[idx].MeteredRemainingCredits = v;
-            CurrentState.CostCenters[idx].InitialMeteredBudget    = v; // keep reset baseline in sync
+            CurrentState.CostCenters[idx].InitialMeteredBudget    = v;
         }
+        AppStateService.SetMultiCCState(CurrentState);
     }
 
     private void AddCostCenter()
     {
         if (CurrentState == null) return;
-        CurrentState.CostCenters.Add(new CostCenterBudget 
-        { 
-            Name                  = $"New CC {CurrentState.CostCenters.Count + 1}", 
-            UserCount             = 1, 
+        CurrentState.CostCenters.Add(new CostCenterBudget
+        {
+            Name                    = $"New CC {CurrentState.CostCenters.Count + 1}",
+            UserCount               = 1,
             MeteredRemainingCredits = 100_000,
-            InitialMeteredBudget  = 100_000,
+            InitialMeteredBudget    = 100_000,
         });
-        StateHasChanged();
+        AppStateService.SetMultiCCState(CurrentState);
     }
 
     private void RemoveCostCenter(int index)
     {
         if (CurrentState == null || index < 0 || index >= CurrentState.CostCenters.Count) return;
         CurrentState.CostCenters.RemoveAt(index);
-        StateHasChanged();
+        AppStateService.SetMultiCCState(CurrentState);
     }
 
     private void RunSimulation()

@@ -49,6 +49,14 @@ public class AppStateService
         // Don't notify - used during initial load to avoid double render
     }
 
+    public void SetMultiCCState(MultiCostCenterState? state, string? presetKey = null)
+    {
+        MultiCCState = state;
+        if (presetKey != null)
+            ActivePresetKey = presetKey;
+        Notify();
+    }
+
     public void SetModeWithoutNotifying(SimulationMode mode)
     {
         FlowState.Mode = mode;

@@ -229,7 +229,7 @@ This is the **highest-priority SOLID violation** in the codebase.
 
 | ID | Severity | Status | Location | Issue |
 |----|----------|--------|----------|-------|
-| TD-01 | **High** | Open | `MultiCCPanel.razor` | Calls `RequestFlowEngine` directly; multi-CC state not in `AppStateService`; two parallel execution paths |
+| TD-01 | **High** | **Fixed** | `MultiCCPanel.razor` | Routes through `AppStateService.RunMultiCostCenter()`; subscribes to `OnChange` to sync URL-restored state; all edits call `SetMultiCCState()` |
 | TD-02 | **High** | Open | `UrlStateService.cs` | Fully implemented, never wired to UI — dead feature or forgotten Share button |
 | TD-03 | **High** | Open | `plan.md` | Describes architecture that was never built; actively misleading |
 | TD-04 | Medium | Open | All node-state dicts | Magic string keys `"pool"`, `"costCentre"` etc. — no compile-time safety |
@@ -254,7 +254,7 @@ This is the **highest-priority SOLID violation** in the codebase.
 3. **TD-09** — `UrlStateService` bare catch; at minimum log to browser console
 
 ### P2 — Fix Before Next Feature (SOLID / architecture)
-4. **TD-01** — Route multi-CC through `AppStateService` (enables `StatCards` to reflect multi-CC state, removes dual execution path)
+4. ~~**TD-01**~~ — Fixed: multi-CC now routes through `AppStateService`; subscribes to `OnChange`; all edits publish state
 5. **TD-04** — Introduce `FlowNode` enum, eliminate magic strings — small change, high safety gain
 6. **TD-02** — Wire `UrlStateService` to a Share button or delete it
 
