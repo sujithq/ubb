@@ -73,7 +73,7 @@ Switch to **Multi-cost-center** mode to see how multiple teams compete for share
 ## Tech Stack
 
 - [.NET 10 Blazor WebAssembly](https://learn.microsoft.com/en-us/aspnet/core/blazor/) — no backend, all calculations in-browser via C#
-- [Bootstrap 5.3.8](https://getbootstrap.com/) — UI via CDN (no npm/build pipeline)
+- [Bootstrap 5.3.8](https://getbootstrap.com/) — vendored locally in `wwwroot/lib/bootstrap/` (no CDN dependency at runtime)
 - `System.Text.Json` — URL state serialization (built into .NET)
 
 ## Getting Started
@@ -156,8 +156,9 @@ The `wwwroot/404.html` (identical to `index.html`) handles direct-link refreshes
 │       │   └── AgenticWorkflow.razor  ← editable 5-step agentic workflow
 │       ├── Pages/Home.razor           ← single-page simulator UI + URL restore
 │       └── wwwroot/
-│           ├── index.html             ← Bootstrap 5.3.8 CDN (SRI), window.ubb helpers
+│           ├── index.html             ← CSP, vendored Bootstrap 5.3.8, js/ubb.js helpers
 │           ├── 404.html               ← SPA fallback for GitHub Pages
+│           ├── lib/bootstrap/         ← vendored Bootstrap (css + bundle js)
 │           ├── .nojekyll              ← prevents Jekyll processing
 │           └── css/app.css            ← UBB-specific styles
 ├── tests/

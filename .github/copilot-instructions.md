@@ -59,7 +59,7 @@ Agents are defined in `.github/agents/`. Do not consider a change complete until
 
 ## Security rules (OWASP Top 10 awareness)
 
-- **A05 — Security misconfiguration**: All CDN `<script>` and `<link>` tags must have `integrity` (SRI) and `crossorigin` attributes.
+- **A05 — Security misconfiguration**: Bootstrap is vendored locally (`wwwroot/lib/bootstrap/`) — there are no runtime CDN dependencies. If a CDN `<script>`/`<link>` is ever (re)introduced it must have `integrity` (SRI) and `crossorigin` attributes. The CSP in `index.html`/`404.html` is `'self'`-only for scripts — keep it that way.
 - **A03 — Injection**: Blazor renders `@variable` with automatic HTML encoding — maintain this; never use `MarkupString` on user-provided data.
 - **A06 — Vulnerable components**: Run `dotnet list package --vulnerable` before committing. Zero tolerance for known CVEs.
 - **A08 — Integrity failures**: Do not add new CDN dependencies without SRI hashes.

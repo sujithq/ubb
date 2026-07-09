@@ -274,4 +274,4 @@ This is the **highest-priority SOLID violation** in the codebase.
 15. **OCP** — `ISimulationMode` interface for extensible mode system
 16. **Factor XI** — `SimulationLogEntry` record with `Level` + `Timestamp`
 17. **Performance** — `ShouldRender()` overrides on leaf components
-18. **CDN vendoring** — Move Bootstrap to `wwwroot/lib/` to eliminate CDN dependency at runtime. *Note 2026-07-09: the stale template-shipped Bootstrap 5.3.3 in `wwwroot/lib/` (~3.5 MB, unreferenced) and `sample-data/weather.json` were deleted; vendoring 5.3.8 to replace the CDN remains optional*
+18. ~~**CDN vendoring**~~ — Done 2026-07-09: Bootstrap 5.3.8 vendored to `wwwroot/lib/bootstrap/` (downloads verified against the previously-pinned SRI hashes); CSP tightened to `'self'`-only sources; zero runtime CDN dependencies remain

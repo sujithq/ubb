@@ -8,7 +8,7 @@
 
 ## TL;DR
 
-Single-page Blazor WebAssembly (.NET 10) app. All billing logic runs client-side in C# — no backend. Simulates how a single AI request (or agentic workflow, or multiple competing cost centers) flows through GitHub Copilot's usage-based-billing guardrails: user-level budget → shared pool → cost-centre metered budget → enterprise metered cap. State is shareable via a Base64URL-encoded URL fragment. Static output deployable to GitHub Pages.
+Single-page Blazor WebAssembly (.NET 10) app. All billing logic runs client-side in C# — no backend. Simulates how a single AI request (or agentic workflow, or multiple competing cost centers) flows through GitHub Copilot's usage-based-billing guardrails: user-level budget → shared pool → cost-centre metered budget → enterprise metered cap. State is shareable via a Base64URL-encoded URL fragment. Bootstrap 5.3.8 is vendored locally (`wwwroot/lib/bootstrap/`) — zero runtime CDN dependencies. Static output deployable to GitHub Pages.
 
 ---
 

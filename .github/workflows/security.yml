@@ -81,6 +81,16 @@ jobs:
             else
               echo "✅ All CDN resources have SRI hashes"
             fi
+            # The CSP meta tag must be present and must not allow remote script sources
+            if ! grep -q 'http-equiv="Content-Security-Policy"' "$file"; then
+              echo "❌ Missing Content-Security-Policy meta tag"
+              FAIL=1
+            elif grep -A6 'http-equiv="Content-Security-Policy"' "$file" | grep 'script-src' | grep -qE 'https?://'; then
+              echo "❌ CSP script-src allows remote origins — must stay 'self'-only"
+              FAIL=1
+            else
+              echo "✅ CSP present with 'self'-only script-src"
+            fi
           done
           exit $FAIL
 
